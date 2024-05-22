@@ -42,9 +42,6 @@ package-lock.json
 coverage/
 *.lcov
 
-# Ignore dependency directories
-backend/node_modules/
-pilot-portal/node_modules/
 
 # Ignore the 'public' directory in the backend if it exists
 backend/public/

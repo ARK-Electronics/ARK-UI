@@ -2,36 +2,37 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const exec = require('child_process').exec;
+const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
 
 app.post('/api/configure-ap', (req, res) => {
   const { ssid, password } = req.body;
-  const config = `interface=wlan0
-ssid=${ssid}
-wpa_passphrase=${password}
-hw_mode=g
-channel=7
-macaddr_acl=0
-auth_algs=1
-ignore_broadcast_ssid=0
-wpa=2
-wpa_key_mgmt=WPA-PSK
-wpa_pairwise=TKIP
-rsn_pairwise=CCMP`;
 
-  fs.writeFile('/etc/hostapd/hostapd.conf', config, (err) => {
+  const configPath = path.join(__dirname, 'hostapd.conf');
+  fs.readFile(configPath, 'utf8', (err, data) => {
     if (err) {
-      console.error(`File write error: ${err}`);
-      return res.status(500).send('Error configuring AP');
+      console.error(`File read error: ${err}`);
+      return res.status(500).send('Error reading AP configuration file');
     }
-    exec('sudo systemctl restart hostapd', (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
+
+    let config = data;
+    config = config.replace(/^(ssid=).*/m, `$1${ssid}`);
+    config = config.replace(/^(wpa_passphrase=).*/m, `$1${password}`);
+
+    fs.writeFile('/etc/hostapd/hostapd.conf', config, (err) => {
+      if (err) {
+        console.error(`File write error: ${err}`);
         return res.status(500).send('Error configuring AP');
       }
-      res.send('AP configured successfully');
+      exec('sudo systemctl restart hostapd', (error, stdout, stderr) => {
+        if (error) {
+          console.error(`exec error: ${error}`);
+          return res.status(500).send('Error configuring AP');
+        }
+        res.send('AP configured successfully');
+      });
     });
   });
 });
