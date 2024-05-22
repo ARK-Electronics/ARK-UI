@@ -32,28 +32,44 @@ export default {
   },
   methods: {
     async submitAPConfig() {
-      await fetch('/api/configure-ap', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ssid: this.apSsid,
-          password: this.apPassword
-        })
-      });
+      try {
+        const response = await fetch('/api/configure-ap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ssid: this.apSsid,
+            password: this.apPassword
+          })
+        });
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        alert('AP settings saved successfully');
+      } catch (error) {
+        alert('Error saving AP settings: ' + error.message);
+      }
     },
     async submitStationConfig() {
-      await fetch('/api/configure-station', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ssid: this.stationSsid,
-          password: this.stationPassword
-        })
-      });
+      try {
+        const response = await fetch('/api/configure-station', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ssid: this.stationSsid,
+            password: this.stationPassword
+          })
+        });
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        alert('Station settings saved successfully');
+      } catch (error) {
+        alert('Error saving Station settings: ' + error.message);
+      }
     }
   }
 };

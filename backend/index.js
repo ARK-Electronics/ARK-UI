@@ -20,13 +20,19 @@ wpa=2
 wpa_key_mgmt=WPA-PSK
 wpa_pairwise=TKIP
 rsn_pairwise=CCMP`;
-  fs.writeFileSync('/etc/hostapd/hostapd.conf', config);
-  exec('sudo systemctl restart hostapd', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
+
+  fs.writeFile('/etc/hostapd/hostapd.conf', config, (err) => {
+    if (err) {
+      console.error(`File write error: ${err}`);
       return res.status(500).send('Error configuring AP');
     }
-    res.send('AP configured successfully');
+    exec('sudo systemctl restart hostapd', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return res.status(500).send('Error configuring AP');
+      }
+      res.send('AP configured successfully');
+    });
   });
 });
 
@@ -36,13 +42,19 @@ app.post('/api/configure-station', (req, res) => {
 ssid="${ssid}"
 psk="${password}"
 }`;
-  fs.appendFileSync('/etc/wpa_supplicant/wpa_supplicant.conf', config);
-  exec('sudo wpa_cli reconfigure', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
+
+  fs.appendFile('/etc/wpa_supplicant/wpa_supplicant.conf', config, (err) => {
+    if (err) {
+      console.error(`File append error: ${err}`);
       return res.status(500).send('Error configuring Station');
     }
-    res.send('Station configured successfully');
+    exec('sudo wpa_cli reconfigure', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return res.status(500).send('Error configuring Station');
+      }
+      res.send('Station configured successfully');
+    });
   });
 });
 
