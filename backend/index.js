@@ -1,13 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { exec } = require('child_process');
 const fs = require('fs');
-const exec = require('child_process').exec;
-const path = require('path');
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
 
 const app = express();
 app.use(bodyParser.json());
 
-function setWifiMode(mode, callback) {
+function setWifiMode(mode, apSsid, stationSsid, callback) {
   const configPath = '/etc/ark.env';
   fs.readFile(configPath, 'utf8', (err, data) => {
     if (err) {
@@ -17,6 +18,8 @@ function setWifiMode(mode, callback) {
 
     let config = data;
     config = config.replace(/^(WIFI_MODE=).*/m, `$1${mode}`);
+    config = config.replace(/^(WIFI_AP_SSID=).*/m, `$1${apSsid}`);
+    config = config.replace(/^(WIFI_STATION_SSID=).*/m, `$1${stationSsid}`);
 
     fs.writeFile(configPath, config, (err) => {
       if (err) {
@@ -34,7 +37,7 @@ function setWifiMode(mode, callback) {
   });
 }
 
-app.get('/api/get-config', (req, res) => {
+app.get('/api/get-config', async (req, res) => {
   const config = {
     apSsid: 'test',
     apPassword: 'test',
@@ -42,82 +45,67 @@ app.get('/api/get-config', (req, res) => {
     stationPassword: 'test'
   };
 
-  const readFileAsync = (path, callback) => {
-    fs.readFile(path, 'utf8', (err, data) => {
-      if (err) {
-        return callback(err);
-      }
-      callback(null, data);
-    });
-  };
+  try {
+    const { stdout } = await exec('nmcli -t -f NAME,UUID,TYPE connection show');
+    const connections = stdout.split('\n').filter(line => line.includes('802-11-wireless'));
 
-  readFileAsync('/etc/hostapd/hostapd.conf', (err, data) => {
-    if (!err) {
-      const ssidMatch = data.match(/^ssid=(.*)$/m);
-      const passMatch = data.match(/^wpa_passphrase=(.*)$/m);
+    for (const line of connections) {
+      const [name] = line.split(':');
+      const { stdout: details } = await exec(`nmcli -t -f 802-11-wireless.ssid,802-11-wireless-security.psk connection show "${name}"`);
+
+      const ssidMatch = details.match(/802-11-wireless.ssid:(.*)/);
+      const passMatch = details.match(/802-11-wireless-security.psk:(.*)/);
+
       if (ssidMatch) {
-        config.apSsid = ssidMatch[1];
-      }
-      if (passMatch) {
-        config.apPassword = passMatch[1];
+        const ssid = ssidMatch[1];
+        const password = passMatch ? passMatch[1] : '';
+        // Determine if this connection is the AP or Station based on the SSID
+        if (ssid === config.apSsid || ssid === 'test') {
+          config.apSsid = ssid;
+          config.apPassword = password;
+        } else {
+          config.stationSsid = ssid;
+          config.stationPassword = password;
+        }
       }
     }
 
-    readFileAsync('/etc/wpa_supplicant/wpa_supplicant.conf', (err, data) => {
-      if (!err) {
-        const ssidMatch = data.match(/ssid="([^"]*)"/);
-        const passMatch = data.match(/psk="([^"]*)"/);
-        if (ssidMatch) {
-          config.stationSsid = ssidMatch[1];
-        }
-        if (passMatch) {
-          config.stationPassword = passMatch[1];
-        }
-      }
-
-      res.json(config);
-    });
-  });
+    res.json(config);
+  } catch (error) {
+    console.error('Error retrieving configuration:', error);
+    res.status(500).send('Error retrieving configuration');
+  }
 });
 
 app.post('/api/configure', (req, res) => {
   const { apSsid, apPassword, stationSsid, stationPassword, mode } = req.body;
 
-  const apConfigPath = '/etc/hostapd/hostapd.conf';
-  const stationConfigPath = '/etc/wpa_supplicant/wpa_supplicant.conf';
+  const apConfigCommand = `
+    nmcli connection add type wifi ifname wlan0 con-name "${apSsid}" autoconnect no ssid ${apSsid} &&
+    nmcli connection modify "${apSsid}" 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared &&
+    nmcli connection modify "${apSsid}" wifi-sec.key-mgmt wpa-psk &&
+    nmcli connection modify "${apSsid}" wifi-sec.psk ${apPassword}
+  `;
 
-  const apConfig = `interface=wlan0
-driver=nl80211
-ssid=${apSsid}
-hw_mode=g
-channel=7
-wmm_enabled=0
-macaddr_acl=0
-ignore_broadcast_ssid=0
-auth_algs=1
-wpa=2
-wpa_passphrase=${apPassword}
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP`;
+  const stationConfigCommand = `
+    nmcli connection add type wifi ifname wlan0 con-name "${stationSsid}" ssid ${stationSsid} &&
+    nmcli connection modify "${stationSsid}" wifi-sec.key-mgmt wpa-psk &&
+    nmcli connection modify "${stationSsid}" wifi-sec.psk ${stationPassword}
+  `;
 
-  const stationConfig = `network={
-  ssid="${stationSsid}"
-  psk="${stationPassword}"
-}`;
-
-  fs.writeFile(apConfigPath, apConfig, (err) => {
-    if (err) {
-      console.error(`File write error: ${err}`);
+  exec(apConfigCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
       return res.status(500).send('Error configuring AP');
     }
 
-    fs.writeFile(stationConfigPath, stationConfig, (err) => {
-      if (err) {
-        console.error(`File write error: ${err}`);
+    exec(stationConfigCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
         return res.status(500).send('Error configuring Station');
       }
 
-      setWifiMode(mode, (error) => {
+      setWifiMode(mode, apSsid, stationSsid, (error) => {
         if (error) {
           return res.status(500).send('Error setting WiFi mode');
         }
