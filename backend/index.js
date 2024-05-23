@@ -22,14 +22,19 @@ app.post('/api/configure', async (req, res) => {
   const { apSsid, apPassword, stationSsid, stationPassword, mode } = req.body;
 
   try {
-    await execFile('/usr/local/bin/set_wifi_config.sh', [apSsid, apPassword, stationSsid, stationPassword, mode]);
-    res.send('Configuration saved');
+    const { stderr } = await execFile('/usr/local/bin/set_wifi_config.sh', [apSsid, apPassword, stationSsid, stationPassword, mode]);
+    if (stderr) {
+      console.error('Error:', stderr);
+      return res.status(500).send(stderr);
+    }
+    res.send('Success');
   } catch (error) {
-    console.error('Error configuring WiFi:', error);
-    res.status(500).send('Error configuring WiFi');
+    console.error('Error:', error);
+    res.status(500).send('Connection failed');
   }
 });
 
 app.listen(3000, () => {
   console.log('Server running on port 3000');
 });
+

@@ -13,7 +13,7 @@
             <label for="ap-password">Password:</label>
             <div class="password-container">
               <input :type="apPasswordVisible ? 'text' : 'password'" id="ap-password" v-model="apPassword" required>
-              <span class="toggle-password" @click="apPasswordVisible = !apPasswordVisible">
+              <span class="toggle-password" @click="toggleVisibility('ap')">
                 <i :class="apPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
               </span>
             </div>
@@ -29,7 +29,7 @@
             <label for="station-password">Password:</label>
             <div class="password-container">
               <input :type="stationPasswordVisible ? 'text' : 'password'" id="station-password" v-model="stationPassword" required>
-              <span class="toggle-password" @click="stationPasswordVisible = !stationPasswordVisible">
+              <span class="toggle-password" @click="toggleVisibility('station')">
                 <i :class="stationPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
               </span>
             </div>
@@ -40,7 +40,9 @@
             <input type="checkbox" v-model="isStationMode">
             <span class="slider round"></span>
           </label>
-          <span>{{ isStationMode ? 'Station Mode' : 'Access Point Mode' }}</span>
+          <span>{{ isStationMode ? 'Station' : 'Access Point' }}</span>
+          <div v-if="isLoading" class="loader"></div>
+          <span v-else :class="statusMessageClass">{{ statusMessage }}</span>
         </div>
         <button type="submit" class="reconfigure-button">Reconfigure</button>
       </form>
@@ -52,29 +54,62 @@
 export default {
   data() {
     return {
-      apSsid: 'test',
-      apPassword: 'test',
-      stationSsid: 'test',
-      stationPassword: 'test',
+      apSsid: '',
+      apPassword: '',
+      apStatus: '',
+      stationSsid: '',
+      stationPassword: '',
+      stationStatus: '',
       isStationMode: false,
       apPasswordVisible: false,
-      stationPasswordVisible: false
+      stationPasswordVisible: false,
+      isLoading: true, // Initially true, set to false after loading config
+      statusMessage: 'Loading configuration...' // Initial message
     };
   },
-  async created() {
-    try {
-      const response = await fetch('/api/get-config');
-      const data = await response.json();
-      this.apSsid = data.apSsid || 'test';
-      this.apPassword = data.apPassword || 'test';
-      this.stationSsid = data.stationSsid || 'test';
-      this.stationPassword = data.stationPassword || 'test';
-    } catch (error) {
-      console.error('Error loading initial config:', error);
+  computed: {
+    statusMessageClass() {
+      return this.statusMessage === 'Connected' ? 'status-message' : 'status-message danger';
     }
   },
+  created() {
+    this.loadConfig();
+  },
   methods: {
+    loadConfig() {
+      const config = localStorage.getItem('wifiConfig');
+      if (config) {
+        Object.assign(this, JSON.parse(config));
+      }
+      this.getConfig();
+    },
+    async getConfig() {
+      this.isLoading = true;
+      try {
+        const response = await fetch('/api/get-config');
+        if (response.ok) {
+          const data = await response.json();
+          this.apSsid = data.apSsid || '';
+          this.apPassword = data.apPassword || '';
+          this.apStatus = data.apStatus || '';
+          this.stationSsid = data.stationSsid || '';
+          this.stationPassword = data.stationPassword || '';
+          this.stationStatus = data.stationStatus || '';
+          this.isStationMode = data.wifiMode === 'station';
+          localStorage.setItem('wifiConfig', JSON.stringify(this.$data));
+          this.statusMessage = this.isStationMode ? this.stationStatus : this.apStatus;
+        } else {
+          throw new Error('Failed to load configuration');
+        }
+      } catch (error) {
+        this.statusMessage = 'Disconnected';
+        console.error('Error loading initial config:', error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
     async submitConfig() {
+      this.isLoading = true;
       const mode = this.isStationMode ? 'station' : 'ap';
       try {
         const response = await fetch('/api/configure', {
@@ -90,17 +125,31 @@ export default {
             mode
           })
         });
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+        if (response.ok) {
+          await this.getConfig(); // Fetch the latest config and status after submission
+          this.statusMessage = 'Connected';
+        } else {
+          const textResponse = await response.text();
+          throw new Error(textResponse);
         }
-        alert('Settings saved successfully');
       } catch (error) {
-        alert('Error saving settings: ' + error.message);
+        this.statusMessage = 'Connection Failed';
+        console.error('Error configuring WiFi:', error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    toggleVisibility(mode) {
+      if (mode === 'ap') {
+        this.apPasswordVisible = !this.apPasswordVisible;
+      } else {
+        this.stationPasswordVisible = !this.stationPasswordVisible;
       }
     }
   }
 };
 </script>
+
 
 <style scoped>
 body {
@@ -187,9 +236,10 @@ input {
 
 .mode-switch {
   display: flex;
-  justify-content: center;
+  justify-content: left;
   align-items: center;
   margin-bottom: 20px;
+  margin-left: 20px;
 }
 
 .switch {
@@ -213,7 +263,7 @@ input {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: #3498db;
   transition: 0.4s;
   border-radius: 34px;
 }
@@ -240,6 +290,35 @@ input:checked + .slider:before {
 
 .mode-switch span {
   font-weight: 600;
+}
+
+.status-message {
+  margin-left: auto;
+  margin-right: 40px;
+  font-weight: bold;
+  color: #00bb31;
+}
+
+.status-message.danger {
+  color: #d9534f;
+}
+
+.loader {
+  margin-left: auto;
+  margin-right: 40px;
+  border: 4px solid #f3f3f3; /* Light grey */
+  border-top: 4px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 2s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .reconfigure-button {
