@@ -15,10 +15,27 @@ async function updateEnvironmentVariables(mode, apSsid, stationSsid) {
     config = config.replace(/^(WIFI_AP_SSID=).*/m, `$1${apSsid}`);
     config = config.replace(/^(WIFI_STATION_SSID=).*/m, `$1${stationSsid}`);
     await fs.writeFile(configPath, config);
-
-    await exec('source /etc/profile.d/ark_env.sh && sudo systemctl restart wifi_control.service');
   } catch (error) {
-    console.error('Error setting WiFi mode:', error);
+    console.error('Error updating environment variables:', error);
+    throw error;
+  }
+}
+
+async function applyConfiguration() {
+  try {
+    await new Promise((resolve, reject) => {
+      exec('bash -c "source /etc/profile.d/ark_env.sh && systemctl restart wifi_control.service"', (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error applying configuration:', error);
+          reject(error);
+        } else {
+          console.log(stdout);
+          resolve(stdout);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error applying configuration:', error);
     throw error;
   }
 }
@@ -85,6 +102,7 @@ app.post('/api/configure', async (req, res) => {
     await exec(apConfigCommand);
     await exec(stationConfigCommand);
     await updateEnvironmentVariables(mode, apSsid, stationSsid);
+    await applyConfiguration();
     res.send('Configuration saved');
   } catch (error) {
     console.error('Error configuring WiFi:', error);
