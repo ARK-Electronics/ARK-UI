@@ -7,54 +7,122 @@ const path = require('path');
 const app = express();
 app.use(bodyParser.json());
 
-app.post('/api/configure-ap', (req, res) => {
-  const { ssid, password } = req.body;
-
-  const configPath = path.join(__dirname, 'hostapd.conf');
+function setWifiMode(mode, callback) {
+  const configPath = '/etc/ark.env';
   fs.readFile(configPath, 'utf8', (err, data) => {
     if (err) {
       console.error(`File read error: ${err}`);
-      return res.status(500).send('Error reading AP configuration file');
+      return callback(err);
     }
 
     let config = data;
-    config = config.replace(/^(ssid=).*/m, `$1${ssid}`);
-    config = config.replace(/^(wpa_passphrase=).*/m, `$1${password}`);
+    config = config.replace(/^(WIFI_MODE=).*/m, `$1${mode}`);
 
-    fs.writeFile('/etc/hostapd/hostapd.conf', config, (err) => {
+    fs.writeFile(configPath, config, (err) => {
       if (err) {
         console.error(`File write error: ${err}`);
-        return res.status(500).send('Error configuring AP');
+        return callback(err);
       }
-      exec('sudo systemctl restart hostapd', (error, stdout, stderr) => {
+      exec('source /etc/profile.d/ark_env.sh && sudo systemctl restart wifi_control.service', (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
-          return res.status(500).send('Error configuring AP');
+          return callback(error);
         }
-        res.send('AP configured successfully');
+        callback(null);
       });
+    });
+  });
+}
+
+app.get('/api/get-config', (req, res) => {
+  const config = {
+    apSsid: 'test',
+    apPassword: 'test',
+    stationSsid: 'test',
+    stationPassword: 'test'
+  };
+
+  const readFileAsync = (path, callback) => {
+    fs.readFile(path, 'utf8', (err, data) => {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, data);
+    });
+  };
+
+  readFileAsync('/etc/hostapd/hostapd.conf', (err, data) => {
+    if (!err) {
+      const ssidMatch = data.match(/^ssid=(.*)$/m);
+      const passMatch = data.match(/^wpa_passphrase=(.*)$/m);
+      if (ssidMatch) {
+        config.apSsid = ssidMatch[1];
+      }
+      if (passMatch) {
+        config.apPassword = passMatch[1];
+      }
+    }
+
+    readFileAsync('/etc/wpa_supplicant/wpa_supplicant.conf', (err, data) => {
+      if (!err) {
+        const ssidMatch = data.match(/ssid="([^"]*)"/);
+        const passMatch = data.match(/psk="([^"]*)"/);
+        if (ssidMatch) {
+          config.stationSsid = ssidMatch[1];
+        }
+        if (passMatch) {
+          config.stationPassword = passMatch[1];
+        }
+      }
+
+      res.json(config);
     });
   });
 });
 
-app.post('/api/configure-station', (req, res) => {
-  const { ssid, password } = req.body;
-  const config = `network={
-ssid="${ssid}"
-psk="${password}"
+app.post('/api/configure', (req, res) => {
+  const { apSsid, apPassword, stationSsid, stationPassword, mode } = req.body;
+
+  const apConfigPath = '/etc/hostapd/hostapd.conf';
+  const stationConfigPath = '/etc/wpa_supplicant/wpa_supplicant.conf';
+
+  const apConfig = `interface=wlan0
+driver=nl80211
+ssid=${apSsid}
+hw_mode=g
+channel=7
+wmm_enabled=0
+macaddr_acl=0
+ignore_broadcast_ssid=0
+auth_algs=1
+wpa=2
+wpa_passphrase=${apPassword}
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP`;
+
+  const stationConfig = `network={
+  ssid="${stationSsid}"
+  psk="${stationPassword}"
 }`;
 
-  fs.appendFile('/etc/wpa_supplicant/wpa_supplicant.conf', config, (err) => {
+  fs.writeFile(apConfigPath, apConfig, (err) => {
     if (err) {
-      console.error(`File append error: ${err}`);
-      return res.status(500).send('Error configuring Station');
+      console.error(`File write error: ${err}`);
+      return res.status(500).send('Error configuring AP');
     }
-    exec('sudo wpa_cli reconfigure', (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
+
+    fs.writeFile(stationConfigPath, stationConfig, (err) => {
+      if (err) {
+        console.error(`File write error: ${err}`);
         return res.status(500).send('Error configuring Station');
       }
-      res.send('Station configured successfully');
+
+      setWifiMode(mode, (error) => {
+        if (error) {
+          return res.status(500).send('Error setting WiFi mode');
+        }
+        res.send('Configuration saved');
+      });
     });
   });
 });
