@@ -1,74 +1,62 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { exec } = require('child_process');
-const fs = require('fs');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const fs = require('fs').promises;
 
 const app = express();
 app.use(bodyParser.json());
 
-function setWifiMode(mode, apSsid, stationSsid, callback) {
+async function updateEnvironmentVariables(mode, apSsid, stationSsid) {
   const configPath = '/etc/ark.env';
-  fs.readFile(configPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error(`File read error: ${err}`);
-      return callback(err);
-    }
-
-    let config = data;
+  try {
+    let config = await fs.readFile(configPath, 'utf8');
     config = config.replace(/^(WIFI_MODE=).*/m, `$1${mode}`);
     config = config.replace(/^(WIFI_AP_SSID=).*/m, `$1${apSsid}`);
     config = config.replace(/^(WIFI_STATION_SSID=).*/m, `$1${stationSsid}`);
+    await fs.writeFile(configPath, config);
 
-    fs.writeFile(configPath, config, (err) => {
-      if (err) {
-        console.error(`File write error: ${err}`);
-        return callback(err);
-      }
-      exec('source /etc/profile.d/ark_env.sh && sudo systemctl restart wifi_control.service', (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return callback(error);
-        }
-        callback(null);
-      });
-    });
-  });
+    await exec('source /etc/profile.d/ark_env.sh && sudo systemctl restart wifi_control.service');
+  } catch (error) {
+    console.error('Error setting WiFi mode:', error);
+    throw error;
+  }
+}
+
+async function getConnectionDetails(ssid) {
+  try {
+    const { stdout: details } = await exec(`nmcli -t -f 802-11-wireless.ssid,802-11-wireless-security.psk connection show "${ssid}" -s`);
+    const ssidMatch = details.match(/802-11-wireless.ssid:(.*)/);
+    const passMatch = details.match(/802-11-wireless-security.psk:(.*)/);
+
+    return {
+      ssid: ssidMatch ? ssidMatch[1] : 'test',
+      password: passMatch ? passMatch[1] : 'test'
+    };
+  } catch (error) {
+    console.error(`Error retrieving details for ${ssid}:`, error);
+    return {
+      ssid: 'test',
+      password: 'test'
+    };
+  }
 }
 
 app.get('/api/get-config', async (req, res) => {
-  const config = {
-    apSsid: 'test',
-    apPassword: 'test',
-    stationSsid: 'test',
-    stationPassword: 'test'
-  };
-
   try {
-    const { stdout } = await exec('nmcli -t -f NAME,UUID,TYPE connection show');
-    const connections = stdout.split('\n').filter(line => line.includes('802-11-wireless'));
+    const envConfig = await fs.readFile('/etc/ark.env', 'utf8');
+    const apSsid = envConfig.match(/WIFI_AP_SSID=(.*)/)[1];
+    const stationSsid = envConfig.match(/WIFI_STATION_SSID=(.*)/)[1];
 
-    for (const line of connections) {
-      const [name] = line.split(':');
-      const { stdout: details } = await exec(`nmcli -t -f 802-11-wireless.ssid,802-11-wireless-security.psk connection show "${name}"`);
+    const apDetails = await getConnectionDetails(apSsid);
+    const stationDetails = await getConnectionDetails(stationSsid);
 
-      const ssidMatch = details.match(/802-11-wireless.ssid:(.*)/);
-      const passMatch = details.match(/802-11-wireless-security.psk:(.*)/);
-
-      if (ssidMatch) {
-        const ssid = ssidMatch[1];
-        const password = passMatch ? passMatch[1] : '';
-        // Determine if this connection is the AP or Station based on the SSID
-        if (ssid === config.apSsid || ssid === 'test') {
-          config.apSsid = ssid;
-          config.apPassword = password;
-        } else {
-          config.stationSsid = ssid;
-          config.stationPassword = password;
-        }
-      }
-    }
+    const config = {
+      apSsid: apDetails.ssid,
+      apPassword: apDetails.password,
+      stationSsid: stationDetails.ssid,
+      stationPassword: stationDetails.password
+    };
 
     res.json(config);
   } catch (error) {
@@ -77,7 +65,7 @@ app.get('/api/get-config', async (req, res) => {
   }
 });
 
-app.post('/api/configure', (req, res) => {
+app.post('/api/configure', async (req, res) => {
   const { apSsid, apPassword, stationSsid, stationPassword, mode } = req.body;
 
   const apConfigCommand = `
@@ -93,26 +81,15 @@ app.post('/api/configure', (req, res) => {
     nmcli connection modify "${stationSsid}" wifi-sec.psk ${stationPassword}
   `;
 
-  exec(apConfigCommand, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return res.status(500).send('Error configuring AP');
-    }
-
-    exec(stationConfigCommand, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
-        return res.status(500).send('Error configuring Station');
-      }
-
-      setWifiMode(mode, apSsid, stationSsid, (error) => {
-        if (error) {
-          return res.status(500).send('Error setting WiFi mode');
-        }
-        res.send('Configuration saved');
-      });
-    });
-  });
+  try {
+    await exec(apConfigCommand);
+    await exec(stationConfigCommand);
+    await updateEnvironmentVariables(mode, apSsid, stationSsid);
+    res.send('Configuration saved');
+  } catch (error) {
+    console.error('Error configuring WiFi:', error);
+    res.status(500).send('Error configuring WiFi');
+  }
 });
 
 app.listen(3000, () => {
