@@ -1,36 +1,50 @@
 <template>
-  <div class="wifi-config">
-    <h1>WiFi Configuration</h1>
-    <form @submit.prevent="submitConfig">
-      <h2>AP Mode</h2>
-      <label for="ap-ssid">SSID:</label>
-      <input type="text" id="ap-ssid" v-model="apSsid" required>
-      <label for="ap-password">Password:</label>
-      <div class="password-container">
-        <input :type="apPasswordVisible ? 'text' : 'password'" id="ap-password" v-model="apPassword" required>
-        <span class="toggle-password" @click="apPasswordVisible = !apPasswordVisible">
-          <i :class="apPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
-        </span>
-      </div>
-      <h2>Station Mode</h2>
-      <label for="station-ssid">SSID:</label>
-      <input type="text" id="station-ssid" v-model="stationSsid" required>
-      <label for="station-password">Password:</label>
-      <div class="password-container">
-        <input :type="stationPasswordVisible ? 'text' : 'password'" id="station-password" v-model="stationPassword" required>
-        <span class="toggle-password" @click="stationPasswordVisible = !stationPasswordVisible">
-          <i :class="stationPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
-        </span>
-      </div>
-      <div class="toggle-switch">
-        <label class="switch">
-          <input type="checkbox" v-model="isStationMode">
-          <span class="slider"></span>
-        </label>
-        <span>{{ isStationMode ? 'Station Mode' : 'Access Point Mode' }}</span>
-      </div>
-      <button type="submit">Reconfigure</button>
-    </form>
+  <div class="wifi-config-container">
+    <div class="wifi-config">
+      <h1>WiFi Configuration</h1>
+      <form @submit.prevent="submitConfig">
+        <div class="section">
+          <h2>AP Mode</h2>
+          <div class="form-group">
+            <label for="ap-ssid">SSID:</label>
+            <input type="text" id="ap-ssid" v-model="apSsid" required>
+          </div>
+          <div class="form-group">
+            <label for="ap-password">Password:</label>
+            <div class="password-container">
+              <input :type="apPasswordVisible ? 'text' : 'password'" id="ap-password" v-model="apPassword" required>
+              <span class="toggle-password" @click="apPasswordVisible = !apPasswordVisible">
+                <i :class="apPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Station Mode</h2>
+          <div class="form-group">
+            <label for="station-ssid">SSID:</label>
+            <input type="text" id="station-ssid" v-model="stationSsid" required>
+          </div>
+          <div class="form-group">
+            <label for="station-password">Password:</label>
+            <div class="password-container">
+              <input :type="stationPasswordVisible ? 'text' : 'password'" id="station-password" v-model="stationPassword" required>
+              <span class="toggle-password" @click="stationPasswordVisible = !stationPasswordVisible">
+                <i :class="stationPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="mode-switch">
+          <label class="switch">
+            <input type="checkbox" v-model="isStationMode">
+            <span class="slider round"></span>
+          </label>
+          <span>{{ isStationMode ? 'Station Mode' : 'Access Point Mode' }}</span>
+        </div>
+        <button type="submit" class="reconfigure-button">Reconfigure</button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -89,51 +103,95 @@ export default {
 </script>
 
 <style scoped>
-.wifi-config {
-  max-width: 600px;
-  margin: auto;
-  padding: 1em;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #000000;
+  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
 }
-form {
-  margin-bottom: 2em;
-}
-label {
-  display: block;
-  margin-bottom: 0.5em;
-}
-input {
+
+.wifi-config-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
   width: 100%;
-  padding: 0.5em;
-  margin-bottom: 1em;
 }
+
+.wifi-config {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  color: #00bb31;
+}
+
+h2 {
+  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+label {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 14px;
+  width: 100%;
+}
+
 .password-container {
   position: relative;
 }
+
 .toggle-password {
   position: absolute;
   right: 10px;
-  top: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   cursor: pointer;
+  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
 }
-button {
-  padding: 0.5em 1em;
-  background-color: #42b983;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+
+.toggle-password:hover {
+  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
 }
-button:hover {
-  background-color: #369f77;
-}
-.toggle-switch {
+
+.mode-switch {
   display: flex;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 2em;
+  margin-bottom: 20px;
 }
+
 .switch {
   position: relative;
   display: inline-block;
@@ -141,11 +199,13 @@ button:hover {
   height: 34px;
   margin-right: 10px;
 }
+
 .switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
+
 .slider {
   position: absolute;
   cursor: pointer;
@@ -157,6 +217,7 @@ button:hover {
   transition: 0.4s;
   border-radius: 34px;
 }
+
 .slider:before {
   position: absolute;
   content: "";
@@ -168,10 +229,32 @@ button:hover {
   transition: 0.4s;
   border-radius: 50%;
 }
+
 input:checked + .slider {
-  background-color: #42b983;
+  background-color: #00bb31;
 }
+
 input:checked + .slider:before {
   transform: translateX(26px);
+}
+
+.mode-switch span {
+  font-weight: 600;
+}
+
+.reconfigure-button {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  color: white;
+  background-color: #00bb31;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.reconfigure-button:hover {
+  background-color: #369f77;
 }
 </style>
