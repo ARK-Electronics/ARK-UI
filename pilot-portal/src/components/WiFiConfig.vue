@@ -1,157 +1,130 @@
 <template>
   <div class="wifi-config-container">
     <div class="wifi-config">
-      <h1>WiFi Configuration</h1>
-      <form @submit.prevent="submitConfig">
-        <div class="section">
-          <h2>AP Mode</h2>
-          <div class="form-group">
-            <label for="ap-ssid">SSID:</label>
-            <input type="text" id="ap-ssid" v-model="apSsid" required>
-          </div>
-          <div class="form-group">
-            <label for="ap-password">Password:</label>
-            <div class="password-container">
-              <input :type="apPasswordVisible ? 'text' : 'password'" id="ap-password" v-model="apPassword" required>
-              <span class="toggle-password" @click="toggleVisibility('ap')">
-                <i :class="apPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
-              </span>
-            </div>
-          </div>
+      <h1>WiFi Setup</h1>
+      <h2>{{ toggleStateStation ? 'Station' : 'Access Point' }}</h2>
+      <form @submit.prevent="createConnection">
+        <div class="form-group">
+          <label for="ssid">SSID:</label>
+          <!-- Bind SSID to the currently relevant connection -->
+          <input type="text" id="ssid" v-model="selectedConnection.ssid" required>
         </div>
-        <div class="section">
-          <h2>Station Mode</h2>
-          <div class="form-group">
-            <label for="station-ssid">SSID:</label>
-            <input type="text" id="station-ssid" v-model="stationSsid" required>
-          </div>
-          <div class="form-group">
-            <label for="station-password">Password:</label>
-            <div class="password-container">
-              <input :type="stationPasswordVisible ? 'text' : 'password'" id="station-password" v-model="stationPassword" required>
-              <span class="toggle-password" @click="toggleVisibility('station')">
-                <i :class="stationPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
-              </span>
-            </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <div class="password-container">
+            <input :type="passwordVisible ? 'text' : 'password'" id="password" v-model="selectedConnection.password" required>
+            <span class="toggle-password" @click="togglePasswordVisibility">
+              <i :class="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+            </span>
           </div>
         </div>
         <div class="mode-switch">
           <label class="switch">
-            <input type="checkbox" v-model="isStationMode">
+            <input type="checkbox" v-model="toggleStateStation" @change="toggleMode">
             <span class="slider round"></span>
           </label>
-          <span>{{ isStationMode ? 'Station' : 'Access Point' }}</span>
-          <div v-if="isLoading" class="loader"></div>
-          <span v-else :class="statusMessageClass">{{ statusMessage }}</span>
         </div>
-        <button type="submit" class="reconfigure-button">Reconfigure</button>
+        <button type="submit" class="reconfigure-button">Apply</button>
       </form>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  data() {
-    return {
-      apSsid: '',
-      apPassword: '',
-      apStatus: '',
-      stationSsid: '',
-      stationPassword: '',
-      stationStatus: '',
-      isStationMode: false,
-      apPasswordVisible: false,
-      stationPasswordVisible: false,
-      isLoading: true, // Initially true, set to false after loading config
-      statusMessage: 'Loading configuration...' // Initial message
-    };
-  },
-  computed: {
-    statusMessageClass() {
-      return this.statusMessage === 'Connected' ? 'status-message' : 'status-message danger';
+data() {
+  return {
+    activeConnection: {
+      ssid: '',
+      password: '',
+      mode: ''
+    },
+    apConnection: {
+      ssid: '',
+      password: '',
+    },
+    stationConnection: {
+      ssid: '',
+      password: ''
+    },
+    selectedConnection: {
+      ssid: '',
+      password: ''
+    },
+    toggleStateStation: false,
+    passwordVisible: false,
+  };
+},
+  async mounted() {
+    await this.fetchActiveConnection();
+    if (this.activeConnection.mode !== 'ap') {
+      this.fetchAPConnectionDetails();
     }
   },
-  created() {
-    this.loadConfig();
-  },
   methods: {
-    loadConfig() {
-      const config = localStorage.getItem('wifiConfig');
-      if (config) {
-        Object.assign(this, JSON.parse(config));
-      }
-      this.getConfig();
-    },
-    async getConfig() {
-      this.isLoading = true;
-      try {
-        const response = await fetch('/api/get-config');
-        if (response.ok) {
-          const data = await response.json();
-          this.apSsid = data.apSsid || '';
-          this.apPassword = data.apPassword || '';
-          this.apStatus = data.apStatus || '';
-          this.stationSsid = data.stationSsid || '';
-          this.stationPassword = data.stationPassword || '';
-          this.stationStatus = data.stationStatus || '';
-          this.isStationMode = data.wifiMode === 'station';
-          localStorage.setItem('wifiConfig', JSON.stringify(this.$data));
-          this.statusMessage = this.isStationMode ? this.stationStatus : this.apStatus;
-        } else {
-          throw new Error('Failed to load configuration');
-        }
-      } catch (error) {
-        this.statusMessage = 'Disconnected';
-        console.error('Error loading initial config:', error);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    async submitConfig() {
-      this.isLoading = true;
-      const mode = this.isStationMode ? 'station' : 'ap';
-      try {
-        const response = await fetch('/api/configure', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            apSsid: this.apSsid,
-            apPassword: this.apPassword,
-            stationSsid: this.stationSsid,
-            stationPassword: this.stationPassword,
-            mode
-          })
-        });
-        if (response.ok) {
-          await this.getConfig(); // Fetch the latest config and status after submission
-          this.statusMessage = 'Connected';
-        } else {
-          const textResponse = await response.text();
-          throw new Error(textResponse);
-        }
-      } catch (error) {
-        this.statusMessage = 'Connection Failed';
-        console.error('Error configuring WiFi:', error);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    toggleVisibility(mode) {
-      if (mode === 'ap') {
-        this.apPasswordVisible = !this.apPasswordVisible;
+    toggleMode() {
+      if (this.toggleStateStation) {
+        this.selectedConnection = { ...this.stationConnection };
       } else {
-        this.stationPasswordVisible = !this.stationPasswordVisible;
+        this.selectedConnection = { ...this.apConnection };
+      }
+    },
+    togglePasswordVisibility() {
+      this.passwordVisible = !this.passwordVisible;
+    },
+    async fetchActiveConnection() {
+      try {
+        const response = await axios.get('/api/get-active-connection');
+        this.activeConnection = {
+          ssid: response.data.ssid,
+          password: response.data.password,
+          mode: response.data.mode
+        };
+        // Update selected connection based on fetched mode
+        this.selectedConnection = { ...this.activeConnection };
+        this.toggleStateStation = this.activeConnection.mode === 'infrastructure';
+        if (this.activeConnection.mode === 'infrastructure') {
+          this.stationConnection = { ...this.activeConnection };
+        }
+      } catch (error) {
+        console.error('Failed to fetch active connection:', error);
+      }
+    },
+    async fetchAPConnectionDetails() {
+      try {
+        console.log("fetching AP details");
+        const response = await axios.get('/api/get-ap-connection');
+        this.apConnection = {
+          ssid: response.data.ssid,
+          password: response.data.password
+        };
+      } catch (error) {
+        console.error('Failed to fetch AP connection details:', error);
+      }
+    },
+    async createConnection() {
+      const mode = this.toggleStateStation ? 'infrastructure' : 'ap';
+      const payload = {
+        ssid: this.selectedConnection.ssid,
+        password: this.selectedConnection.password,
+        mode: mode
+      };
+      try {
+        const response = await axios.post('/api/create-connection', payload);
+        console.log('Connection response:', response.data);
+        this.fetchActiveConnection(); // Refresh data after setting
+      } catch (error) {
+        console.error('Failed to create connection:', error);
       }
     }
   }
 };
 </script>
 
-
 <style scoped>
+/* Include all the provided CSS here */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #000000;
@@ -224,14 +197,8 @@ input {
 .toggle-password {
   position: absolute;
   right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 9px;
   cursor: pointer;
-  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
-}
-
-.toggle-password:hover {
-  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
 }
 
 .mode-switch {
