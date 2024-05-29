@@ -23,6 +23,8 @@
             <input type="checkbox" v-model="toggleStateStation" @change="toggleMode">
             <span class="slider round"></span>
           </label>
+          <div v-if="isLoading" class="loader"></div>
+          <span v-else :class="statusMessageClass">{{ statusMessage }}</span>
         </div>
         <button type="submit" class="reconfigure-button">Apply</button>
       </form>
@@ -34,29 +36,36 @@
 import axios from 'axios';
 
 export default {
-data() {
-  return {
-    activeConnection: {
-      ssid: '',
-      password: '',
-      mode: ''
-    },
-    apConnection: {
-      ssid: '',
-      password: '',
-    },
-    stationConnection: {
-      ssid: '',
-      password: ''
-    },
-    selectedConnection: {
-      ssid: '',
-      password: ''
-    },
-    toggleStateStation: false,
-    passwordVisible: false,
-  };
-},
+  data() {
+    return {
+      activeConnection: {
+        ssid: '',
+        password: '',
+        mode: ''
+      },
+      apConnection: {
+        ssid: '',
+        password: '',
+      },
+      stationConnection: {
+        ssid: '',
+        password: ''
+      },
+      selectedConnection: {
+        ssid: '',
+        password: ''
+      },
+      toggleStateStation: false,
+      passwordVisible: false,
+      isLoading: false,
+      statusMessage: 'Unknown',
+    };
+  },
+  computed: {
+    statusMessageClass() {
+      return this.statusMessage === 'Connected' ? 'status-message' : 'status-message danger';
+    }
+  },
   async mounted() {
     await this.fetchActiveConnection();
     if (this.activeConnection.mode !== 'ap') {
@@ -70,11 +79,18 @@ data() {
       } else {
         this.selectedConnection = { ...this.apConnection };
       }
+
+      if (this.selectedConnection.ssid === this.activeConnection.ssid) {
+        this.statusMessage = 'Connected';
+      } else {
+        this.statusMessage = 'Disconnected';
+      }
     },
     togglePasswordVisibility() {
       this.passwordVisible = !this.passwordVisible;
     },
     async fetchActiveConnection() {
+      this.isLoading = true;
       try {
         const response = await axios.get('/api/get-active-connection');
         this.activeConnection = {
@@ -84,15 +100,19 @@ data() {
         };
         // Update selected connection based on fetched mode
         this.selectedConnection = { ...this.activeConnection };
+        this.statusMessage = 'Connected';
         this.toggleStateStation = this.activeConnection.mode === 'infrastructure';
         if (this.activeConnection.mode === 'infrastructure') {
           this.stationConnection = { ...this.activeConnection };
         }
+        this.isLoading = false;
       } catch (error) {
         console.error('Failed to fetch active connection:', error);
+        this.isLoading = false;
       }
     },
     async fetchAPConnectionDetails() {
+      this.isLoading = true;
       try {
         console.log("fetching AP details");
         const response = await axios.get('/api/get-ap-connection');
@@ -100,11 +120,14 @@ data() {
           ssid: response.data.ssid,
           password: response.data.password
         };
+        this.isLoading = false;
       } catch (error) {
         console.error('Failed to fetch AP connection details:', error);
+        this.isLoading = false;
       }
     },
     async createConnection() {
+      this.isLoading = true;
       const mode = this.toggleStateStation ? 'infrastructure' : 'ap';
       const payload = {
         ssid: this.selectedConnection.ssid,
@@ -115,8 +138,10 @@ data() {
         const response = await axios.post('/api/create-connection', payload);
         console.log('Connection response:', response.data);
         this.fetchActiveConnection(); // Refresh data after setting
+        this.isLoading = false;
       } catch (error) {
         console.error('Failed to create connection:', error);
+        this.isLoading = false;
       }
     }
   }
