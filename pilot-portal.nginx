@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name pilot-portal;
+    server_name pi6x.local;
 
     location / {
         root /path/to/your/dist;
