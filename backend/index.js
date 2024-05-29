@@ -52,7 +52,7 @@ app.post('/api/create-connection', async (req, res) => {
   }
 });
 
-app.post('/api/upload-firmware', async (req, res) => {
+app.post('/api/firmware-upload', async (req, res) => {
   if (!req.files || !req.files.firmware) {
     return res.status(400).send('No files were uploaded.');
   }
