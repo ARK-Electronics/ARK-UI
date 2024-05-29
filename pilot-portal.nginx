@@ -3,7 +3,7 @@ server {
     server_name pi6x.local;
 
     location / {
-        root /path/to/your/dist;
+        root /var/www/pilot-portal/html;
         try_files $uri $uri/ /index.html;
     }
 
