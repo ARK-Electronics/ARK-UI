@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <div class="sidebar" ref="sidebar">
+      <img src="@/assets/logo.png" alt="Logo" class="logo">
       <router-link class="link" to="/">Home</router-link>
       <router-link class="link" to="/wifi-config">WiFi</router-link>
       <router-link class="link" to="/firmware-upload">Firmware</router-link>
@@ -62,7 +63,7 @@ export default {
   height: 100vh; /* Full height */
   left: 0;
   top: 0;
-  padding: 10px 20px;
+  padding: 0px 20px;
   display: flex;
   flex-direction: column;
   align-items: start;
@@ -89,7 +90,7 @@ export default {
 
 .content {
   flex-grow: 1;
-  padding: 20px;
+  padding-left: 4vh;
   height: 100vh; /* Full height */
   overflow-y: hidden; /* Enable scrolling */
   color: var(--ark-color-black-bold); /* Text color black */
