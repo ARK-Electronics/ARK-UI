@@ -104,6 +104,8 @@ export default {
         this.toggleStateStation = this.activeConnection.mode === 'infrastructure';
         if (this.activeConnection.mode === 'infrastructure') {
           this.stationConnection = { ...this.activeConnection };
+        } else if (this.activeConnection.mode === 'ap') {
+          this.apConnection = { ...this.activeConnection };
         }
         this.isLoading = false;
       } catch (error) {
