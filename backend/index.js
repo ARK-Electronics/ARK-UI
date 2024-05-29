@@ -3,9 +3,11 @@ const bodyParser = require('body-parser');
 const util = require('util');
 const execFile = util.promisify(require('child_process').execFile);
 const fs = require('fs').promises;
+const fileUpload = require('express-fileupload');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(fileUpload());
 
 app.get('/api/get-active-connection', async (req, res) => {
   try {
@@ -52,4 +54,30 @@ app.post('/api/create-connection', async (req, res) => {
 
 app.listen(3000, () => {
   console.log('Server running on port 3000');
+});
+
+app.post('/api/upload-firmware', async (req, res) => {
+  if (!req.files || !req.files.firmware) {
+    return res.status(400).send('No files were uploaded.');
+  }
+
+  // Save the file to a temporary directory
+  const firmwareFile = req.files.firmware;
+  const uploadPath = __dirname + '/uploads/' + firmwareFile.name;
+
+  try {
+    await firmwareFile.mv(uploadPath);
+    // Script is in path
+    const { stdout, stderr } = await execFile('python', ['flash_px4.sh', uploadPath]);
+
+    if (stderr) {
+      console.error('Script error:', stderr);
+      return res.status(500).send('Script error: ' + stderr);
+    }
+
+    res.json({ message: 'Successfully uploaded and executed the script.', output: stdout });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Failed to upload and execute script');
+  }
 });

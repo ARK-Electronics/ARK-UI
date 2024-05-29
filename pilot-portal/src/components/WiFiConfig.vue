@@ -26,7 +26,7 @@
           <div v-if="isLoading" class="loader"></div>
           <span v-else :class="statusMessageClass">{{ statusMessage }}</span>
         </div>
-        <button type="submit" class="reconfigure-button">Apply</button>
+        <button type="submit" class="apply-button">Apply</button>
       </form>
     </div>
   </div>
@@ -36,6 +36,8 @@
 import axios from 'axios';
 
 export default {
+  name: 'FirmwareUpload',
+
   data() {
     return {
       activeConnection: {
@@ -154,8 +156,7 @@ export default {
 /* Include all the provided CSS here */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #000000;
-  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
+  color: var(--ark-color-black); /* Black at 65% saturation */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -167,33 +168,25 @@ body {
 .wifi-config-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
+  height: 100vh;
 }
 
 .wifi-config {
   width: 100%;
-  max-width: 400px;
   padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--ark-color-white);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.10);
 }
 
 h1 {
   text-align: center;
-  color: #00bb31;
+  color: var(--ark-color-black);
 }
 
 h2 {
-  color: rgba(0, 0, 0, 0.65); /* Black at 65% saturation */
+  color: var(--ark-color-green); /* Black at 65% saturation */
   margin-bottom: 10px;
   text-align: center;
-}
-
-.section {
-  margin-bottom: 20px;
 }
 
 .form-group {
@@ -205,7 +198,6 @@ h2 {
 
 label {
   font-weight: 600;
-  margin-right: 10px;
 }
 
 input {
@@ -257,7 +249,7 @@ input {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #3498db;
+  background-color: var(--ark-color-blue);
   transition: 0.4s;
   border-radius: 34px;
 }
@@ -269,13 +261,13 @@ input {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
+  background-color: var(--ark-color-white);
   transition: 0.4s;
   border-radius: 50%;
 }
 
 input:checked + .slider {
-  background-color: #00bb31;
+  background-color: var(--ark-color-green);
 }
 
 input:checked + .slider:before {
@@ -290,7 +282,7 @@ input:checked + .slider:before {
   margin-left: auto;
   margin-right: 40px;
   font-weight: bold;
-  color: #00bb31;
+  color: var(--ark-color-green);
 }
 
 .status-message.danger {
@@ -300,8 +292,8 @@ input:checked + .slider:before {
 .loader {
   margin-left: auto;
   margin-right: 40px;
-  border: 4px solid #f3f3f3; /* Light grey */
-  border-top: 4px solid #3498db; /* Blue */
+  border: 4px solid var(--ark-color-black-shadow);
+  border-top: 4px solid var(--ark-color-blue);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -315,19 +307,19 @@ input:checked + .slider:before {
   100% { transform: rotate(360deg); }
 }
 
-.reconfigure-button {
+.apply-button {
   width: 100%;
   padding: 10px;
   font-size: 16px;
-  color: white;
-  background-color: #00bb31;
+  color: var(--ark-color-white);;
+  background-color:var(--ark-color-green);
   border: none;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
-.reconfigure-button:hover {
-  background-color: #369f77;
+.apply-button:hover {
+  background-color: var(--ark-color-green-hover);
 }
 </style>
