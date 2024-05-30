@@ -71,7 +71,7 @@ export default {
   async mounted() {
     await this.fetchActiveConnection();
     if (this.activeConnection.mode !== 'ap') {
-      this.fetchAPConnectionDetails();
+      this.fetchAPConnection();
     }
   },
   methods: {
@@ -94,6 +94,7 @@ export default {
     async fetchActiveConnection() {
       this.isLoading = true;
       try {
+        console.log("fetchActiveConnection");
         const response = await axios.get('/api/get-active-connection');
         this.activeConnection = {
           ssid: response.data.ssid,
@@ -115,10 +116,10 @@ export default {
         this.isLoading = false;
       }
     },
-    async fetchAPConnectionDetails() {
+    async fetchAPConnection() {
       this.isLoading = true;
       try {
-        console.log("fetching AP details");
+        console.log("fetchAPConnection");
         const response = await axios.get('/api/get-ap-connection');
         this.apConnection = {
           ssid: response.data.ssid,

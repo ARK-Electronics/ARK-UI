@@ -25,15 +25,15 @@ export default {
       formData.append('firmware', this.file);
 
       try {
-        const response = await fetch('/api/firmware-upload', {
-          method: 'POST',
-          body: formData,
+        const response = await axios.post('/api/firmware-upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         });
-        const result = await response.json();
-        console.info('result:', result);
+        console.log('result:', response.data);
 
       } catch (error) {
-        console.error('Upload failed', error);
+        console.error('Upload failed', error.response.data);
       }
     },
   },

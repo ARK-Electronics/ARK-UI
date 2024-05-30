@@ -2,10 +2,12 @@ const express = require('express');
 const util = require('util');
 const execFile = util.promisify(require('child_process').execFile);
 const fileUpload = require('express-fileupload');
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
 app.use(fileUpload({ limits: { fileSize: 3 * 1024 * 1024 } })); // 3MB max, MCU flash is 2MB
+app.use(cors());
 
 // Helper function to handle the execution of shell scripts
 async function executeScript(scriptPath, args = []) {
@@ -57,12 +59,15 @@ app.post('/api/firmware-upload', async (req, res) => {
     return res.status(400).send('No files were uploaded.');
   }
 
+  console.log("firmware-upload");
+
   const firmwareFile = req.files.firmware;
   const uploadPath = `${__dirname}/uploads/${firmwareFile.name}`;
 
   try {
     await firmwareFile.mv(uploadPath);
     const result = await executeScript('/usr/local/bin/flash_px4.sh', [uploadPath]);
+    console.log("upload complete");
     res.json({ message: 'Successfully uploaded and executed the script.', output: result });
   } catch (error) {
     res.status(500).send('Failed to upload and execute script');
