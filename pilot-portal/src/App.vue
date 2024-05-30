@@ -96,4 +96,10 @@ export default {
   color: var(--ark-color-black-bold); /* Text color black */
   background-color: var(--ark-color-white); /* Light gray background for the content area, change to white if necessary */
 }
+
+.logo {
+  width: 120px;
+  height: auto;
+}
+
 </style>
