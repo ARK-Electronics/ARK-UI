@@ -1,7 +1,7 @@
 server {
     listen 80;
     server_name pi6x.local;
-    client_max_body_size 3M;  // Allow up to 3MB of request bodies
+    client_max_body_size 3M;
 
     location / {
         root /var/www/pilot-portal/html;
