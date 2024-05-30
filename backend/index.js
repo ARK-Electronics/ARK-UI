@@ -55,6 +55,8 @@ app.post('/api/create-connection', async (req, res) => {
 });
 
 app.post('/api/firmware-upload', async (req, res) => {
+  console.log("Received firmware upload request");
+
   if (!req.files || !req.files.firmware) {
     return res.status(400).send('No files were uploaded.');
   }
@@ -62,7 +64,7 @@ app.post('/api/firmware-upload', async (req, res) => {
   console.log("firmware-upload");
 
   const firmwareFile = req.files.firmware;
-  const uploadPath = `${__dirname}/uploads/${firmwareFile.name}`;
+  const uploadPath = `/tmp/${firmwareFile.name}`;
 
   try {
     await firmwareFile.mv(uploadPath);
