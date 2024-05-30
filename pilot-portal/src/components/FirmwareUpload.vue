@@ -29,7 +29,11 @@ export default {
     };
   },
   mounted() {
-    this.socket = io('http://localhost:3000');
+    // this.socket = io('http://localhost:3000');
+    // this.socket = io(`${window.location.protocol}//${window.location.host}/socket.io`);
+    // this.socket = io(`${window.location.protocol}//${window.location.host}`);
+    this.socket = io(process.env.VUE_APP_SOCKET_URL);
+
     this.socket.on('connect', () => console.log(`Connected with Socket ID: ${this.socket.id}`));
     this.socket.on('progress', data => {
       this.progress = data.percent;
