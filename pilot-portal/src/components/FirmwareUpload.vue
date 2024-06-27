@@ -38,6 +38,7 @@ export default {
     this.socket.on('progress', data => {
       this.progress = data.percent;
       this.statusMessage = `${data.status} ${data.percent.toFixed(2)}%`;
+      this.isUploading = true;
     });
     this.socket.on('completed', message => {
       this.statusMessage = message.message;
