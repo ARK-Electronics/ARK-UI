@@ -1,4 +1,4 @@
-# pilot-portal
+# ark-ui
 
 ## Project setup
 ```

@@ -7,7 +7,7 @@ server {
     client_max_body_size 3M;
 
     location / {
-        root /var/www/pilot-portal/html;
+        root /var/www/ark-ui/html;
         try_files $uri $uri/ /index.html;
     }
 

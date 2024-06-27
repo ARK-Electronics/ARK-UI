@@ -23,7 +23,7 @@ BACKEND_PID=$!
 
 # Navigate to the frontend directory and start the frontend server
 echo "Starting frontend..."
-cd ../pilot-portal
+cd ../ark-ui
 npm run serve &
 FRONTEND_PID=$!
 

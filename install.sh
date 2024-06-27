@@ -15,7 +15,7 @@ export NVM_DIR="$HOME/.nvm"
 nvm install 20
 cd backend
 npm install
-cd ../pilot-portal
+cd ../ark-ui
 npm install
 npm run build
 
