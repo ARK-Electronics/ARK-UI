@@ -2,7 +2,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name pi6x.local;
+    server_name _;
 
     client_max_body_size 3M;
 
