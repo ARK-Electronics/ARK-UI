@@ -47,6 +47,7 @@ export default {
   --ark-color-green-hover: rgba(0, 187, 49, 0.65);
   --ark-color-green-shadow: rgba(0, 187, 49, 0.1);
   --ark-color-blue: #3498db;
+  --ark-color-red: #f44336;
 }
 
 #app {
