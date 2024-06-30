@@ -56,9 +56,9 @@ export default {
   data() {
     return {
       autopilot: {
-        type: 'PX4',
-        version: '1.15.0',
-        gitHash: '58f7c3e9c'
+        type: '',
+        version: '',
+        gitHash: ''
       },
       services: [],
       connectionDetails: {
@@ -70,24 +70,23 @@ export default {
   },
   methods: {
     fetchConnectionDetails() {
-      this.isLoadingConnectionDetails = true;
       axios.get('/api/get-active-connection')
         .then(response => {
           this.connectionDetails.ssid = response.data.ssid;
-          this.isLoadingConnectionDetails = false;
+          this.connectionDetails.ipAddress = response.data.ip_address;
+          this.connectionDetails.hostname = response.data.hostname;
         })
         .catch(error => {
           console.error('Error fetching connection details:', error);
-          this.isLoadingConnectionDetails = false;
         });
     }
   },
   fetchAutopilotData() {
     axios.get('/api/get-autopilot-data')
       .then(response => {
-        this.autopilot.type = response.data.autopilot_type;
         this.autopilot.gitHash = response.data.git_hash;
         this.autopilot.version = response.data.version;
+        this.autopilot.type = response.data.autopilot_type;
       })
       .catch(error => {
         console.error('Error fetching PX4 data:', error);
@@ -96,7 +95,7 @@ export default {
   fetchServiceStatuses() {
     axios.get('/api/get-service-statuses')
       .then(response => {
-        this.services = response.data;
+        this.services = response.data.services;
       })
       .catch(error => {
         console.error('Error fetching service statuses:', error);
