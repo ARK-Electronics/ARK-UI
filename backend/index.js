@@ -67,15 +67,10 @@ function executeScriptWithProgress(scriptPath, args, socket) {
 // API Routes
 app.get('/api/get-autopilot-data', async (req, res) => {
   try {
-    const { stdout, stderr } = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
-    if (stderr) {
-      console.error('Script Error:', stderr);
-      return res.status(500).send('Error in script execution: ' + stderr);
-    }
-    res.json(JSON.parse(stdout));
+    const config = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
+    res.json(JSON.parse(config.stdout));
   } catch (error) {
-    console.error('Execution Error:', error);
-    res.status(500).send('Internal Server Error: ' + error.message);
+    res.status(500).send('Error retrieving configuration');
   }
 });
 
