@@ -68,6 +68,11 @@ export default {
       }
     };
   },
+    mounted() {
+    this.fetchConnectionDetails();
+    this.fetchAutopilotData();
+    this.fetchServiceStatuses();
+  },
   methods: {
     fetchConnectionDetails() {
       axios.get('/api/get-active-connection')
@@ -79,32 +84,27 @@ export default {
         .catch(error => {
           console.error('Error fetching connection details:', error);
         });
+    },
+    fetchAutopilotData() {
+      axios.get('/api/get-autopilot-data')
+        .then(response => {
+          this.autopilot.gitHash = response.data.git_hash;
+          this.autopilot.version = response.data.version;
+          this.autopilot.type = response.data.autopilot_type;
+        })
+        .catch(error => {
+          console.error('Error fetching PX4 data:', error);
+        });
+    },
+    fetchServiceStatuses() {
+      axios.get('/api/get-service-statuses')
+        .then(response => {
+          this.services = response.data.services;
+        })
+        .catch(error => {
+          console.error('Error fetching service statuses:', error);
+        });
     }
-  },
-  fetchAutopilotData() {
-    axios.get('/api/get-autopilot-data')
-      .then(response => {
-        this.autopilot.gitHash = response.data.git_hash;
-        this.autopilot.version = response.data.version;
-        this.autopilot.type = response.data.autopilot_type;
-      })
-      .catch(error => {
-        console.error('Error fetching PX4 data:', error);
-      });
-  },
-  fetchServiceStatuses() {
-    axios.get('/api/get-service-statuses')
-      .then(response => {
-        this.services = response.data.services;
-      })
-      .catch(error => {
-        console.error('Error fetching service statuses:', error);
-      });
-  },
-  mounted() {
-    this.fetchConnectionDetails();
-    this.fetchAutopilotData();
-    this.fetchServiceStatuses();
   }
 }
 
