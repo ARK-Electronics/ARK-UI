@@ -1,7 +1,7 @@
 <template>
   <div class="autopilot-container">
     <h1>System Overview</h1>
-    <div class="autopilot-details">
+    <div class="details-row">
       <div class="detail">
         <p><strong>{{ "Autopilot" }}</strong></p>
         <p>{{ autopilot.type }}</p>
@@ -15,9 +15,21 @@
         <p>{{ autopilot.gitHash }}</p>
       </div>
     </div>
-    <div class="detail">
-      <p><strong>Network:</strong> {{ connectionDetails.ssid }}</p>
+    <div class="details-row">
+      <div class="detail">
+        <p><strong>{{ "Network" }}</strong></p>
+        <p>{{ connectionDetails.ssid }}</p>
+      </div>
+      <div class="detail">
+        <p><strong>{{ "IP Address" }}</strong></p>
+        <p>{{ connectionDetails.ipAddress }}</p>
+      </div>
+      <div class="detail">
+        <p><strong>{{ "Hostname" }}</strong></p>
+        <p>{{ connectionDetails.hostname }}</p>
+      </div>
     </div>
+
     <h2>Services</h2>
     <div class="services-grid">
       <div v-for="service in services" :key="service.name" class="service-box" :class="{'active-glow': service.active, 'inactive-glow': !service.active}">
@@ -46,15 +58,11 @@ export default {
         version: '1.15.0',
         gitHash: '58f7c3e9c'
       },
-      services: [
-        { name: 'mavlink-router', enabled: true, active: true },
-        { name: 'dds-agent', enabled: true, active: false },
-        { name: 'logloader', enabled: false, active: true },
-        { name: 'polaris', enabled: true, active: false },
-        { name: 'ark-ui-backend', enabled: true, active: false },
-      ],
+      services: [],
       connectionDetails: {
-        ssid: ''
+        ssid: '',
+        ipAddress: '',
+        hostname: ''
       }
     };
   },
@@ -72,8 +80,30 @@ export default {
         });
     }
   },
+  fetchAutopilotData() {
+    axios.get('/api/get-autopilot-data')
+      .then(response => {
+        this.autopilot.type = response.data.autopilot_type;
+        this.autopilot.gitHash = response.data.git_hash;
+        this.autopilot.version = response.data.version;
+      })
+      .catch(error => {
+        console.error('Error fetching PX4 data:', error);
+      });
+  },
+  fetchServiceStatuses() {
+    axios.get('/api/get-service-statuses')
+      .then(response => {
+        this.services = response.data;
+      })
+      .catch(error => {
+        console.error('Error fetching service statuses:', error);
+      });
+  },
   mounted() {
     this.fetchConnectionDetails();
+    this.fetchAutopilotData();
+    this.fetchServiceStatuses();
   }
 }
 
@@ -92,7 +122,7 @@ h1, h2 {
   padding: 20px;
 }
 
-.autopilot-details {
+.details-row {
   display: flex;
   justify-content: space-around;
   width: 100%;
@@ -169,10 +199,10 @@ h1, h2 {
 }
 
 .active-glow {
-  box-shadow: 0px 0px 10px var(--ark-color-green);
+  box-shadow: 0px 0px 8px var(--ark-color-green);
 }
 
 .inactive-glow {
-  box-shadow: 0px 0px 10px var(--ark-color-red);
+  box-shadow: 0px 0px 8px var(--ark-color-red);
 }
 </style>

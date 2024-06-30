@@ -65,6 +65,24 @@ function executeScriptWithProgress(scriptPath, args, socket) {
 
 
 // API Routes
+app.get('/api/get-autopilot-data', async (req, res) => {
+  try {
+    const config = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
+    res.json(JSON.parse(config.stdout));
+  } catch (error) {
+    res.status(500).send('Error retrieving configuration');
+  }
+});
+
+app.get('/api/get-service-statuses', async (req, res) => {
+  try {
+    const config = await execFile('/usr/local/bin/get_service_statuses.sh');
+    res.json(JSON.parse(config.stdout));
+  } catch (error) {
+    res.status(500).send('Error retrieving configuration');
+  }
+});
+
 app.get('/api/get-active-connection', async (req, res) => {
   try {
     const config = await execFile('/usr/local/bin/get_active_connection_details.sh');
