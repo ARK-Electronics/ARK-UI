@@ -1,6 +1,6 @@
 <template>
   <div class="autopilot-container">
-    <h1>System Overview</h1>
+    <h1>Overview</h1>
     <div class="details-grid">
       <div class="detail">
         <p><strong>Autopilot</strong></p>
