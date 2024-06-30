@@ -1,31 +1,29 @@
 <template>
   <div class="autopilot-container">
     <h1>System Overview</h1>
-    <div class="details-row">
+    <div class="details-grid">
       <div class="detail">
-        <p><strong>{{ "Autopilot" }}</strong></p>
+        <p><strong>Autopilot</strong></p>
         <p>{{ autopilot.type }}</p>
       </div>
       <div class="detail">
-        <p><strong>{{ "Version" }}</strong></p>
+        <p><strong>Version</strong></p>
         <p>{{ autopilot.version }}</p>
       </div>
       <div class="detail">
-        <p><strong>{{ "Git Hash" }}</strong></p>
+        <p><strong>Git Hash</strong></p>
         <p>{{ autopilot.gitHash }}</p>
       </div>
-    </div>
-    <div class="details-row">
       <div class="detail">
-        <p><strong>{{ "Network" }}</strong></p>
+        <p><strong>Network</strong></p>
         <p>{{ connectionDetails.ssid }}</p>
       </div>
       <div class="detail">
-        <p><strong>{{ "IP Address" }}</strong></p>
+        <p><strong>IP Address</strong></p>
         <p>{{ connectionDetails.ipAddress }}</p>
       </div>
       <div class="detail">
-        <p><strong>{{ "Hostname" }}</strong></p>
+        <p><strong>Hostname</strong></p>
         <p>{{ connectionDetails.hostname }}</p>
       </div>
     </div>
@@ -33,7 +31,7 @@
     <div class="services-grid">
       <div v-for="service in services" :key="service.service" class="service-box"
            :class="{'active-glow': service.active === 'active', 'inactive-glow': service.active !== 'active'}">
-        <p class="service-name"><strong>{{ service.name }}</strong></p>
+        <p class="service-name"><strong>{{ service.service }}</strong></p>
         <div class="status-row">
           <span class="status-indicator"
                 :class="{'background-green': service.enabled === 'enabled', 'background-red': service.enabled !== 'enabled'}"></span>
@@ -48,6 +46,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from 'axios';
@@ -123,9 +122,10 @@ h1, h2 {
   padding: 20px;
 }
 
-.details-row {
-  display: flex;
-  justify-content: space-around;
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
   width: 100%;
   margin-bottom: 20px;
 }
@@ -134,11 +134,12 @@ h1, h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
 .detail p {
   margin-top: 0;
-  margin-bottom: 1px; /* Sets 1px spacing between <p> elements within a detail */
+  margin-bottom: 1px;
 }
 
 .label, p {
