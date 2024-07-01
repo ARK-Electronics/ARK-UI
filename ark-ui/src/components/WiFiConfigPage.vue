@@ -2,7 +2,7 @@
   <div class="wifi-config-container">
     <div class="wifi-config">
       <h1>WiFi Setup</h1>
-      <h2>{{ toggleStateStation ? 'Station' : 'Access Point' }}</h2>
+      <h2>{{ toggleStateStation ? 'Station' : 'Hotspot' }}</h2>
       <form @submit.prevent="createConnection">
         <div class="form-group">
           <label for="ssid">SSID:</label>

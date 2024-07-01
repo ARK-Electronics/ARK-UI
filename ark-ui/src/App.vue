@@ -3,7 +3,7 @@
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
       <router-link class="link" to="/">Overview</router-link>
-      <router-link class="link" to="/wifi-config">WiFi</router-link>
+      <router-link class="link" to="/wifi-config">Network</router-link>
       <router-link class="link" to="/firmware-upload">Firmware</router-link>
     </div>
     <div class="content" :style="{ marginLeft: sidebarWidth + 'px' }">
