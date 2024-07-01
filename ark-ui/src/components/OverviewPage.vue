@@ -26,6 +26,18 @@
         <p><strong>Hostname</strong></p>
         <p>{{ connectionDetails.hostname }}</p>
       </div>
+      <div class="detail">
+        <p><strong>Voltage</strong></p>
+        <p>{{ autopilot.voltage }} V</p>
+      </div>
+      <div class="detail">
+        <p><strong>Remaining</strong></p>
+        <p>{{ autopilot.remaining }} %</p>
+      </div>
+      <div class="detail">
+        <p><strong>Current</strong></p>
+        <p>{{ autopilot.current }} A</p>
+      </div>
     </div>
     <h2>Services</h2>
     <div class="services-grid">
@@ -57,7 +69,10 @@ export default {
       autopilot: {
         type: '',
         version: '',
-        gitHash: ''
+        gitHash: '',
+        voltage: '',
+        remaining: '',
+        current: ''
       },
       services: [],
       connectionDetails: {
@@ -90,6 +105,10 @@ export default {
           this.autopilot.gitHash = response.data.git_hash;
           this.autopilot.version = response.data.version;
           this.autopilot.type = response.data.autopilot_type;
+          this.autopilot.voltage = response.data.voltage;
+          this.autopilot.remaining = response.data.remaining;
+          this.autopilot.current = response.data.current;
+
         })
         .catch(error => {
           console.error('Error fetching PX4 data:', error);
