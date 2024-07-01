@@ -14,8 +14,8 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 # Source the NVM scripts to use it in the same script
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+source $NVM_DIR/nvm.sh
+source $NVM_DIR/bash_completion
 
 # Install the desired Node.js version and set it as default
 nvm install 20
