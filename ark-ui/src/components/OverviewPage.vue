@@ -41,9 +41,9 @@
     </div>
     <h2>Services</h2>
     <div class="services-grid">
-      <div v-for="service in services" :key="service.service" class="service-box"
+      <div v-for="service in services" :key="service.name" class="service-box"
            :class="{'active-glow': service.active === 'active', 'inactive-glow': service.active !== 'active'}">
-        <p class="service-name"><strong>{{ service.service }}</strong></p>
+        <p class="service-name"><strong>{{ service.name }}</strong></p>
         <div class="status-row">
           <span class="status-indicator"
                 :class="{'background-green': service.enabled === 'enabled', 'background-red': service.enabled !== 'enabled'}"></span>
