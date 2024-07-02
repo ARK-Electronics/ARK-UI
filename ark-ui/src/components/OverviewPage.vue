@@ -27,16 +27,16 @@
         <p>{{ connectionDetails.hostname }}</p>
       </div>
       <div class="detail">
-        <p><strong>Voltage</strong></p>
-        <p>{{ autopilot.voltage }} V</p>
+        <p><strong>Voltage (V)</strong></p>
+        <p>{{ autopilot.voltage }}</p>
       </div>
       <div class="detail">
-        <p><strong>Remaining</strong></p>
-        <p>{{ autopilot.remaining }} %</p>
+        <p><strong>Remaining (%)</strong></p>
+        <p>{{ autopilot.remaining }}</p>
       </div>
       <div class="detail">
-        <p><strong>Current</strong></p>
-        <p>{{ autopilot.current }} A</p>
+        <p><strong>Current (A)</strong></p>
+        <p>{{ autopilot.current }}</p>
       </div>
     </div>
     <h2>Services</h2>
@@ -67,12 +67,12 @@ export default {
   data() {
     return {
       autopilot: {
-        type: '',
-        version: '',
-        gitHash: '',
-        voltage: '',
-        remaining: '',
-        current: ''
+        type: '--',
+        version: '--',
+        gitHash: '--',
+        voltage: '--',
+        remaining: '--',
+        current: '--'
       },
       services: [],
       connectionDetails: {
@@ -105,9 +105,10 @@ export default {
           this.autopilot.gitHash = response.data.git_hash;
           this.autopilot.version = response.data.version;
           this.autopilot.type = response.data.autopilot_type;
-          this.autopilot.voltage = response.data.voltage;
-          this.autopilot.remaining = response.data.remaining;
-          this.autopilot.current = response.data.current;
+          // Format numerical data to reduce precision
+          this.autopilot.voltage = parseFloat(response.data.voltage).toFixed(2);
+          this.autopilot.remaining = parseFloat(response.data.remaining).toFixed(0);
+          this.autopilot.current = parseFloat(response.data.current).toFixed(2);
 
         })
         .catch(error => {
