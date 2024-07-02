@@ -35,12 +35,18 @@
       the right labelled "change" and when you click the button an edit dialogue appears where
       you can enter the new hostname and click "submit" -->
       <div class="hostname-display">
-        <span>{{ activeConnection.hostname }}</span>
+        <!-- <span>{{ activeConnection.hostname }}</span> -->
+        <p>{{ activeConnection.hostname }}</p>
       </div>
-      <div class="hostname-edit-dialog">
-        <input type="text" v-model="newHostname" placeholder="Enter new hostname" required>
-        <button @click="submitNewHostname">Submit</button>
-      </div>
+      <form @submit.prevent="submitNewHostname">
+        <div v-if="!showRebootDialog" class="hostname-edit-dialog">
+          <input type="text" v-model="newHostname" placeholder="Enter new hostname" required>
+          <button type="submit" class="apply-button" style="width: 50%;">Submit</button>
+        </div>
+        <div v-if="showRebootDialog" class="reboot-dialog">
+          <p>Reboot required to take effect</p>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -76,6 +82,7 @@ export default {
       isLoading: false,
       statusMessage: 'Unknown',
       newHostname: '',
+      showRebootDialog: false,
     };
   },
   computed: {
@@ -164,6 +171,8 @@ export default {
     },
     async submitNewHostname() {
       console.log('submitNewHostname')
+      this.showRebootDialog = true;
+
       try {
         const payload = { hostname: this.newHostname };
         const response = await axios.post('/api/change-hostname', payload);
@@ -347,23 +356,21 @@ input:checked + .slider:before {
 }
 
 .hostname-display {
-  display: flex;
   background-color: var(--ark-color-black-shadow);
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 10px;
-  padding: 8px;
+  padding: 10px;
   border-radius: 5px;
 }
 
-.hostname-display span, .hostname-display{
-  padding: 5px 10px; /* Add padding to individual elements */
+.hostname-display p {
+  margin: 0 0 0px 0;
+  text-align: center;
 }
 
 .hostname-edit-dialog button {
   padding: 5px 10px;
   margin-left: 10px;
-  background-color: var(--ark-color-blue);
+  background-color: var(--ark-color-green);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -378,7 +385,23 @@ input:checked + .slider:before {
 .hostname-edit-dialog input {
   flex-grow: 1;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ark-color-black-shadow);
   border-radius: 5px;
 }
+
+.reboot-dialog {
+  padding: 10px;
+  border: 2px solid var(--ark-color-green);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.reboot-dialog p {
+  margin: 0 0 0px 0;
+  text-align: center;
+}
+
 </style>
