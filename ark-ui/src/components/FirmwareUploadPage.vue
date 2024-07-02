@@ -55,10 +55,10 @@ export default {
       this.file = event.target.files[0];
     },
     dragOverHandler(event) {
-      event.currentTarget.style.background = '#f3f3f3';  // Highlight
+      event.currentTarget.style.background = 'var(--ark-color-black-shadow)';
     },
     dragLeaveHandler(event) {
-      event.currentTarget.style.background = 'none';  // Remove highlight
+      event.currentTarget.style.background = 'none';
     },
     dropHandler(event) {
       this.file = event.dataTransfer.files[0];

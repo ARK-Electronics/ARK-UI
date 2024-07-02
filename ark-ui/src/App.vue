@@ -2,8 +2,8 @@
   <div id="app">
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
-      <router-link class="link" to="/">Home</router-link>
-      <router-link class="link" to="/wifi-config">WiFi</router-link>
+      <router-link class="link" to="/">Overview</router-link>
+      <router-link class="link" to="/wifi-config">Network</router-link>
       <router-link class="link" to="/firmware-upload">Firmware</router-link>
     </div>
     <div class="content" :style="{ marginLeft: sidebarWidth + 'px' }">
@@ -47,6 +47,7 @@ export default {
   --ark-color-green-hover: rgba(0, 187, 49, 0.65);
   --ark-color-green-shadow: rgba(0, 187, 49, 0.1);
   --ark-color-blue: #3498db;
+  --ark-color-red: #f44336;
 }
 
 #app {
