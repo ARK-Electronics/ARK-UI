@@ -121,8 +121,7 @@ app.post('/api/create-connection', async (req, res) => {
 app.post('/api/change-hostname', async (req, res) => {
   console.log('/api/change-hostname');
   try {
-    const result = await execFile(`/usr/local/bin/change_hostname.sh`, [req.body.hostname]);
-    res.json(JSON.parse(result.stdout));
+    await execFile(`/usr/local/bin/change_hostname.sh`, [req.body.hostname]);
   } catch (error) {
     res.status(500).send('Connection failed');
   }
