@@ -12,8 +12,14 @@ sudo apt-get install -y curl jq nginx
 # Install NVM (Node Version Manager)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
+# Determine the correct NVM directory based on XDG_CONFIG_HOME
+if [ -z "$XDG_CONFIG_HOME" ]; then
+    export NVM_DIR="$HOME/.nvm"
+else
+    export NVM_DIR="$XDG_CONFIG_HOME/nvm"
+fi
+
 # Source the NVM scripts to use it in the same script
-export NVM_DIR="$HOME/.nvm"
 source $NVM_DIR/nvm.sh
 source $NVM_DIR/bash_completion
 
