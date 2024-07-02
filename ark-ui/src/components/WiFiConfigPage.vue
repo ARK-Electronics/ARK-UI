@@ -1,7 +1,7 @@
 <template>
-  <div class="wifi-config-container">
-    <div class="wifi-config">
-      <h1>WiFi Setup</h1>
+  <div class="page-container">
+    <div class="page-section-container">
+      <h1>WiFi</h1>
       <h2>{{ toggleStateStation ? 'Station' : 'Hotspot' }}</h2>
       <form @submit.prevent="createConnection">
         <div class="form-group">
@@ -29,6 +29,19 @@
         <button type="submit" class="apply-button">Apply</button>
       </form>
     </div>
+    <div class="page-section-container">
+      <h1>Hostname</h1>
+      <!-- TODO: I want a section here that displays the hostname (not editable) with a button to
+      the right labelled "change" and when you click the button an edit dialogue appears where
+      you can enter the new hostname and click "submit" -->
+      <div class="hostname-display">
+        <span>{{ activeConnection.hostname }}</span>
+      </div>
+      <div class="hostname-edit-dialog">
+        <input type="text" v-model="newHostname" placeholder="Enter new hostname" required>
+        <button @click="submitNewHostname">Submit</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -43,7 +56,8 @@ export default {
       activeConnection: {
         ssid: '',
         password: '',
-        mode: ''
+        mode: '',
+        hostname: ''
       },
       apConnection: {
         ssid: '',
@@ -61,6 +75,7 @@ export default {
       passwordVisible: false,
       isLoading: false,
       statusMessage: 'Unknown',
+      newHostname: '',
     };
   },
   computed: {
@@ -99,7 +114,8 @@ export default {
         this.activeConnection = {
           ssid: response.data.ssid,
           password: response.data.password,
-          mode: response.data.mode
+          mode: response.data.mode,
+          hostname: response.data.hostname
         };
         // Update selected connection based on fetched mode
         this.selectedConnection = { ...this.activeConnection };
@@ -132,7 +148,6 @@ export default {
       }
     },
     async createConnection() {
-      this.isLoading = true;
       const mode = this.toggleStateStation ? 'infrastructure' : 'ap';
       const payload = {
         ssid: this.selectedConnection.ssid,
@@ -143,10 +158,19 @@ export default {
         const response = await axios.post('/api/create-connection', payload);
         console.log('Connection response:', response.data);
         this.fetchActiveConnection(); // Refresh data after setting
-        this.isLoading = false;
       } catch (error) {
         console.error('Failed to create connection:', error);
-        this.isLoading = false;
+      }
+    },
+    async submitNewHostname() {
+      console.log('submitNewHostname')
+      try {
+        const payload = { hostname: this.newHostname };
+        const response = await axios.post('/api/change-hostname', payload);
+        console.log('Connection response:', response.data);
+        this.fetchActiveConnection(); // Refresh data after setting
+      } catch (error) {
+        console.error('Failed to change hostname:', error);
       }
     }
   }
@@ -166,15 +190,14 @@ body {
   overflow: hidden;
 }
 
-.wifi-config-container {
-  display: flex;
+.page-container {
+  display: flex-column;
   justify-content: center;
   height: 100vh;
 }
 
-.wifi-config {
-  width: 100%;
-  padding: 20px;
+.page-section-container {
+  padding: 10px;
   background-color: var(--ark-color-white);
 }
 
@@ -321,5 +344,41 @@ input:checked + .slider:before {
 
 .apply-button:hover {
   background-color: var(--ark-color-green-hover);
+}
+
+.hostname-display {
+  display: flex;
+  background-color: var(--ark-color-black-shadow);
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+.hostname-display span, .hostname-display{
+  padding: 5px 10px; /* Add padding to individual elements */
+}
+
+.hostname-edit-dialog button {
+  padding: 5px 10px;
+  margin-left: 10px;
+  background-color: var(--ark-color-blue);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: white;
+}
+
+.hostname-edit-dialog {
+  display: flex;
+  width: 100%;
+}
+
+.hostname-edit-dialog input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
 </style>

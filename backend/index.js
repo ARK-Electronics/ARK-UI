@@ -66,6 +66,7 @@ function executeScriptWithProgress(scriptPath, args, socket) {
 
 // API Routes
 app.get('/api/get-autopilot-data', async (req, res) => {
+  console.log('/api/get-autopilot-data');
   try {
     const config = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
     res.json(JSON.parse(config.stdout));
@@ -75,6 +76,7 @@ app.get('/api/get-autopilot-data', async (req, res) => {
 });
 
 app.get('/api/get-service-statuses', async (req, res) => {
+  console.log('/api/get-service-statuses');
   try {
     const config = await execFile('/usr/local/bin/get_service_statuses.sh');
     res.json(JSON.parse(config.stdout));
@@ -84,6 +86,7 @@ app.get('/api/get-service-statuses', async (req, res) => {
 });
 
 app.get('/api/get-active-connection', async (req, res) => {
+  console.log('/api/get-active-connection');
   try {
     const config = await execFile('/usr/local/bin/get_active_connection_details.sh');
     res.json(JSON.parse(config.stdout));
@@ -93,6 +96,7 @@ app.get('/api/get-active-connection', async (req, res) => {
 });
 
 app.get('/api/get-ap-connection', async (req, res) => {
+  console.log('/api/get-ap-connection');
   try {
     const config = await execFile('/usr/local/bin/get_ap_connection_details.sh');
     res.json(JSON.parse(config.stdout));
@@ -102,6 +106,7 @@ app.get('/api/get-ap-connection', async (req, res) => {
 });
 
 app.post('/api/create-connection', async (req, res) => {
+  console.log('/api/create-connection');
   const { ssid, password, mode } = req.body;
   const script = mode === 'ap' ? 'create_ap_connection.sh' : 'create_infra_connection.sh';
 
@@ -113,7 +118,18 @@ app.post('/api/create-connection', async (req, res) => {
   }
 });
 
+app.post('/api/change-hostname', async (req, res) => {
+  console.log('/api/change-hostname');
+  try {
+    const result = await execFile(`/usr/local/bin/change_hostname.sh`, [req.body.hostname]);
+    res.json(JSON.parse(result.stdout));
+  } catch (error) {
+    res.status(500).send('Connection failed');
+  }
+});
+
 app.post('/api/firmware-upload', (req, res) => {
+  console.log('/api/firmware-upload');
   if (!req.files || !req.files.firmware) {
     return res.status(400).send('No files were uploaded.');
   }
