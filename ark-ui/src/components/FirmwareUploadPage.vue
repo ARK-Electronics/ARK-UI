@@ -18,7 +18,6 @@ import axios from 'axios';
 import io from 'socket.io-client';
 
 export default {
-  name: 'FirmwareUpload',
   data() {
     return {
       file: null,
