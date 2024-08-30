@@ -1,19 +1,33 @@
 <template>
   <div class="editor-backdrop">
     <div class="editor-container">
-      <h2>Edit Configuration for {{ serviceName }}</h2>
+      <h3>{{ "Service Configuration Editor" }}</h3>
+      <h1>{{ serviceName }}</h1>
 
       <div v-for="(value, key) in config" :key="key" class="form-group">
-        <label :for="key">{{ key }}</label>
+        <label :for="key">{{ formatKey(key) }}</label>
 
-        <input v-if="typeof value === 'string'" type="text" :id="key" v-model="config[key]" />
+        <input
+          v-if="typeof value === 'string'"
+          type="text"
+          :id="key"
+          v-model="config[key]"
+          class="text-input"
+        />
 
-        <input v-if="typeof value === 'boolean'" type="checkbox" :id="key" v-model="config[key]" />
+        <div v-if="typeof value === 'boolean'" class="checkbox-group">
+          <input
+            type="checkbox"
+            :id="key"
+            v-model="config[key]"
+            class="checkbox-input"
+          />
+        </div>
       </div>
 
       <div class="actions">
-        <button @click="saveConfig">Save</button>
-        <button @click="cancelEdit">Cancel</button>
+        <button @click="saveConfig" class="save-button">Save</button>
+        <button @click="cancelEdit" class="cancel-button">Cancel</button>
       </div>
     </div>
   </div>
@@ -35,38 +49,36 @@ export default {
   },
   methods: {
     loadConfig() {
-        console.log(`Loading config for service: ${this.serviceName}`);
-        axios.get(`/api/service/config?serviceName=${this.serviceName}`)
-            .then(response => {
-                // Directly access the status and data properties
-                const status = response.data.status;
-                const tomlData = response.data.data;
+      console.log(`Loading config for service: ${this.serviceName}`);
+      axios
+        .get(`/api/service/config?serviceName=${this.serviceName}`)
+        .then((response) => {
+          const status = response.data.status;
+          const tomlData = response.data.data;
 
-                console.log('API Data:', response.data);
-                console.log('Status:', status);
-                console.log('TOML Data:', tomlData);
-
-                if (status === 'success') {
-                    try {
-                        // Trim and parse the TOML data
-                        this.config = toml.parse(tomlData.trim());
-                        console.log('Config loaded:', this.config);
-                    } catch (error) {
-                        console.error('Error parsing TOML:', error);
-                    }
-                } else {
-                    console.error('Failed to load config: Status is not success', tomlData);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching config from API:', error);
-            });
+          if (status === 'success') {
+            try {
+              this.config = toml.parse(tomlData.trim());
+              console.log('Config loaded:', this.config);
+            } catch (error) {
+              console.error('Error parsing TOML:', error);
+            }
+          } else {
+            console.error('Failed to load config:', tomlData);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching config from API:', error);
+        });
     },
     saveConfig() {
       const tomlString = toml.dump(this.config);
 
-      axios.post(`/api/service/config?serviceName=${this.serviceName}`, { config: tomlString })
-        .then(response => {
+      axios
+        .post(`/api/service/config?serviceName=${this.serviceName}`, {
+          config: tomlString
+        })
+        .then((response) => {
           if (response.data.status === 'success') {
             this.$emit('close-editor');
           } else {
@@ -74,16 +86,20 @@ export default {
             alert('Error saving configuration');
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error saving config:', error);
           alert('Error saving configuration');
         });
     },
     cancelEdit() {
       this.$emit('close-editor');
+    },
+    formatKey(key) {
+      // Capitalize first letter and replace underscores with spaces
+      return key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -93,7 +109,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -102,59 +118,94 @@ export default {
 
 .editor-container {
   background-color: var(--ark-color-white);
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  border-radius: 12px;
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
+  overflow-y: auto;
+  max-height: 90vh;
 }
 
-h2 {
+h3 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-top: 0px;
   color: var(--ark-color-black);
 }
 
+h1 {
+  text-align: center;
+  color: var(--ark-color-black-bold);
+}
+
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-weight: 600;
+  margin-bottom: 8px;
   color: var(--ark-color-black);
 }
 
-.form-group input[type="text"] {
+.text-input {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   box-sizing: border-box;
-  border: 1px solid var(--ark-color-grey);
-  border-radius: 4px;
+  border: 2px solid var(--ark-color-black-shadow);
+  border-radius: 6px;
+  font-size: 16px;
+  color: var(--ark-color-black);
 }
 
-.form-group input[type="checkbox"] {
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.checkbox-input {
   transform: scale(1.5);
   margin-right: 10px;
+}
+
+.checkbox-label {
+  font-weight: 600;
+  color: var(--ark-color-black);
 }
 
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
-.actions button {
-  padding: 10px 20px;
+.save-button,
+.cancel-button {
+  padding: 12px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  background-color: var(--ark-color-black);
+  font-size: 16px;
+  font-weight: 600;
   color: var(--ark-color-white);
   transition: background-color 0.3s ease;
 }
 
-.actions button:hover {
-  background-color: var(--ark-color-grey);
+.save-button {
+  background-color: var(--ark-color-green);
+}
+
+.save-button:hover {
+  background-color: var(--ark-color-green-hover);
+}
+
+.cancel-button {
+  background-color: var(--ark-color-red);
+}
+
+.cancel-button:hover {
+  background-color: var(--ark-color-red-hover);
 }
 </style>

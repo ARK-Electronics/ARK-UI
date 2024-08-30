@@ -42,12 +42,13 @@ export default {
   --ark-color-black: rgba(0, 0, 0, 0.65);
   --ark-color-black-bold: rgba(0, 0, 0, 1);
   --ark-color-black-shadow: rgba(0, 0, 0, 0.1);
-  --ark-color-white: #FFFFFF;
+  --ark-color-white: rgba(255, 255, 255, 1);
   --ark-color-green: rgba(0, 187, 49, 1);
   --ark-color-green-hover: rgba(0, 187, 49, 0.65);
   --ark-color-green-shadow: rgba(0, 187, 49, 0.1);
-  --ark-color-blue: #3498db;
-  --ark-color-red: #f44336;
+  --ark-color-blue: rgba(52, 152, 219, 1);
+  --ark-color-red: rgba(244, 67, 54, 1);
+  --ark-color-red-hover: rgba(244, 67, 54, 0.65);
 }
 
 #app {
