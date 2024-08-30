@@ -54,16 +54,37 @@
                 :class="{'background-green': service.active === 'active', 'background-red': service.active !== 'active'}"></span>
           <p class="status-label">{{ service.active }}</p>
         </div>
+        <div class="service-actions">
+          <button @click="restartService(service.name)">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <button @click="editConfig(service.name)">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+          <button @click="viewLogs(service.name)">
+            <i class="fas fa-book"></i>
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Include ConfigEditor component and pass the selected service name -->
+    <ConfigEditor
+      v-if="selectedService"
+      :serviceName="selectedService"
+      @close-editor="selectedService = null"
+    />
   </div>
 </template>
 
-
 <script>
 import axios from 'axios';
+import ConfigEditor from './ConfigEditor.vue';
 
 export default {
+  components: {
+    ConfigEditor
+  },
   data() {
     return {
       autopilot: {
@@ -79,10 +100,11 @@ export default {
         ssid: '',
         ipAddress: '',
         hostname: ''
-      }
+      },
+      selectedService: null
     };
   },
-    mounted() {
+  mounted() {
     this.fetchConnectionDetails();
     this.fetchAutopilotData();
     this.fetchServiceStatuses();
@@ -109,24 +131,50 @@ export default {
           this.autopilot.voltage = parseFloat(response.data.voltage).toFixed(2);
           this.autopilot.remaining = parseFloat(response.data.remaining).toFixed(0);
           this.autopilot.current = parseFloat(response.data.current).toFixed(2);
-
         })
         .catch(error => {
           console.error('Error fetching PX4 data:', error);
         });
     },
     fetchServiceStatuses() {
-      axios.get('/api/get-service-statuses')
+      axios.get('/api/service/statuses')
         .then(response => {
           this.services = response.data.services;
         })
         .catch(error => {
           console.error('Error fetching service statuses:', error);
         });
+    },
+    restartService(serviceName) {
+      axios.post(`/api/services/restart/${serviceName}`)
+        .then(response => {
+          if (response.status === 200) {
+            alert(`Service ${serviceName} restarted successfully`);
+          } else {
+            alert(`Failed to restart service ${serviceName}`);
+          }
+        })
+        .catch(error => {
+          console.error('Error restarting service:', error);
+          alert('Error restarting service');
+        });
+    },
+    editConfig(serviceName) {
+      this.selectedService = serviceName;  // Set the selected service to trigger the editor
+    },
+    viewLogs(serviceName) {
+      axios.get(`/api/services/logs/${serviceName}`)
+        .then(response => {
+          const logs = response.data;
+          this.$modal.show('logsModal', { title: `${serviceName} Logs`, content: logs });
+        })
+        .catch(error => {
+          console.error('Error fetching logs:', error);
+          alert('Error fetching logs');
+        });
     }
   }
 }
-
 </script>
 
 <style scoped>
@@ -189,7 +237,7 @@ h1, h2 {
   transition: box-shadow 0.3s ease-in-out;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 .service-name {
@@ -226,5 +274,26 @@ h1, h2 {
 
 .inactive-glow {
   box-shadow: 0px 0px 8px var(--ark-color-red);
+}
+
+.service-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.service-actions button {
+  padding: 5px 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--ark-color-white);
+  color: var(--ark-color-black);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.service-actions button:hover {
+  transform: scale(1.3);
 }
 </style>
