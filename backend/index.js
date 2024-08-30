@@ -67,7 +67,7 @@ function executeScriptWithProgress(scriptPath, args, socket) {
 app.get('/api/service/statuses', async (req, res) => {
   console.log('/api/service/statuses');
   try {
-    const config = await execFile('/usr/local/bin/get_service_statuses.sh');
+    const config = await execFile('/usr/local/bin/service_get_statuses.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -78,7 +78,7 @@ app.get('/api/service/config', async (req, res) => {
   const { serviceName } = req.query;
   console.log(`/api/service/config GET for ${serviceName}`);
   try {
-    const { stdout } = await execFile('/usr/local/bin/get_service_config.sh', [serviceName]);
+    const { stdout } = await execFile('/usr/local/bin/service_get_config.sh', [serviceName]);
     res.json(JSON.parse(stdout));
     console.log(`data: ${stdout}`);
   } catch (error) {
@@ -92,7 +92,7 @@ app.post('/api/service/config', async (req, res) => {
   const { config } = req.body;
   console.log(`/api/service/config POST for ${serviceName}`);
   try {
-    const { stdout } = await execFile('/usr/local/bin/save_service_config.sh', [serviceName, config]);
+    const { stdout } = await execFile('/usr/local/bin/service_save_config.sh', [serviceName, config]);
     const result = JSON.parse(stdout);
     res.json(result);
   } catch (error) {
@@ -106,7 +106,7 @@ app.post('/api/service/restart', async (req, res) => {
   console.log(`/api/service/restart POST for ${serviceName}`);
 
   try {
-    await execFile('/usr/local/bin/restart_service.sh', [serviceName]);
+    await execFile('/usr/local/bin/service_restart.sh', [serviceName]);
     res.send(`Service ${serviceName} restarted successfully.`);
   } catch (error) {
     console.error(`Error restarting service ${serviceName}:`, error.message);
@@ -119,7 +119,7 @@ app.get('/api/service/logs', async (req, res) => {
   console.log(`/api/service/logs GET for ${serviceName}`);
 
   try {
-    const { stdout } = await execFile('/usr/local/bin/get_service_logs.sh', [serviceName]);
+    const { stdout } = await execFile('/usr/local/bin/service_get_logs.sh', [serviceName]);
     res.send(stdout);
   } catch (error) {
     console.error(`Error retrieving logs for ${serviceName}:`, error.message);
