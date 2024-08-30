@@ -70,7 +70,7 @@ export default {
       formData.append('firmware', this.file);
       formData.append('socketId', this.socket.id);
       try {
-        const response = await axios.post('/api/firmware-upload', formData, {
+        const response = await axios.post('/api/vehicle/firmware-upload', formData, {
           headers: {'Content-Type': 'multipart/form-data'}
         });
         this.statusMessage = response.data.message;

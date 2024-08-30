@@ -111,7 +111,7 @@ export default {
   },
   methods: {
     fetchConnectionDetails() {
-      axios.get('/api/get-active-connection')
+      axios.get('/api/network/active-connection')
         .then(response => {
           this.connectionDetails.ssid = response.data.ssid;
           this.connectionDetails.ipAddress = response.data.ip_address;
@@ -122,7 +122,7 @@ export default {
         });
     },
     fetchAutopilotData() {
-      axios.get('/api/get-autopilot-data')
+      axios.get('/api/vehicle/autopilot-data')
         .then(response => {
           this.autopilot.gitHash = response.data.git_hash;
           this.autopilot.version = response.data.version;

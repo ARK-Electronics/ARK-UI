@@ -63,18 +63,7 @@ function executeScriptWithProgress(scriptPath, args, socket) {
   });
 }
 
-
-// API Routes
-app.get('/api/get-autopilot-data', async (req, res) => {
-  console.log('/api/get-autopilot-data');
-  try {
-    const config = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
-    res.json(JSON.parse(config.stdout));
-  } catch (error) {
-    res.status(500).send('Error retrieving configuration');
-  }
-});
-
+//// SERVICE :: GET :: STATUSES
 app.get('/api/service/statuses', async (req, res) => {
   console.log('/api/service/statuses');
   try {
@@ -84,7 +73,7 @@ app.get('/api/service/statuses', async (req, res) => {
     res.status(500).send('Error retrieving configuration');
   }
 });
-
+//// SERVICE :: GET :: CONFIG
 app.get('/api/service/config', async (req, res) => {
   const { serviceName } = req.query;
   console.log(`/api/service/config GET for ${serviceName}`);
@@ -97,7 +86,7 @@ app.get('/api/service/config', async (req, res) => {
     res.status(500).send(`Error retrieving configuration for ${serviceName}`);
   }
 });
-
+//// SERVICE :: POST :: CONFIG
 app.post('/api/service/config', async (req, res) => {
   const { serviceName } = req.query;
   const { config } = req.body;
@@ -111,7 +100,7 @@ app.post('/api/service/config', async (req, res) => {
     res.status(500).send(`Error saving configuration for ${serviceName}`);
   }
 });
-
+//// SERVICE :: POST :: RESTART
 app.post('/api/service/restart', async (req, res) => {
   const { serviceName } = req.query;
   console.log(`/api/service/restart POST for ${serviceName}`);
@@ -124,7 +113,7 @@ app.post('/api/service/restart', async (req, res) => {
     res.status(500).send(`Error restarting service ${serviceName}`);
   }
 });
-
+//// SERVICE :: GET :: LOGS
 app.get('/api/service/logs', async (req, res) => {
   const { serviceName } = req.query;
   console.log(`/api/service/logs GET for ${serviceName}`);
@@ -137,9 +126,9 @@ app.get('/api/service/logs', async (req, res) => {
     res.status(500).send(`Error retrieving logs for ${serviceName}`);
   }
 });
-
-app.get('/api/get-active-connection', async (req, res) => {
-  console.log('/api/get-active-connection');
+//// NETWORK :: GET :: ACTIVE_CONN
+app.get('/api/network/active-connection', async (req, res) => {
+  console.log('/api/network/active-connection');
   try {
     const config = await execFile('/usr/local/bin/get_active_connection_details.sh');
     res.json(JSON.parse(config.stdout));
@@ -147,9 +136,9 @@ app.get('/api/get-active-connection', async (req, res) => {
     res.status(500).send('Error retrieving configuration');
   }
 });
-
-app.get('/api/get-ap-connection', async (req, res) => {
-  console.log('/api/get-ap-connection');
+//// NETWORK :: GET :: AP_CONN
+app.get('/api/network/ap-connection', async (req, res) => {
+  console.log('/api/network/ap-connection');
   try {
     const config = await execFile('/usr/local/bin/get_ap_connection_details.sh');
     res.json(JSON.parse(config.stdout));
@@ -157,9 +146,9 @@ app.get('/api/get-ap-connection', async (req, res) => {
     res.status(500).send('Error retrieving configuration');
   }
 });
-
-app.post('/api/create-connection', async (req, res) => {
-  console.log('/api/create-connection');
+//// NETWORK :: POST :: CREATE_CONN
+app.post('/api/network/create-connection', async (req, res) => {
+  console.log('/api/network/create-connection');
   const { ssid, password, mode } = req.body;
   const script = mode === 'ap' ? 'create_ap_connection.sh' : 'create_infra_connection.sh';
 
@@ -170,18 +159,28 @@ app.post('/api/create-connection', async (req, res) => {
     res.status(500).send('Connection failed');
   }
 });
-
-app.post('/api/change-hostname', async (req, res) => {
-  console.log('/api/change-hostname');
+//// NETWORK :: POST :: HOSTNAME
+app.post('/api/network/change-hostname', async (req, res) => {
+  console.log('/api/network/change-hostname');
   try {
     await execFile(`/usr/local/bin/change_hostname.sh`, [req.body.hostname]);
   } catch (error) {
     res.status(500).send('Connection failed');
   }
 });
-
-app.post('/api/firmware-upload', (req, res) => {
-  console.log('/api/firmware-upload');
+//// VEHICLE :: GET :: STATUSES
+app.get('/api/vehicle/autopilot-data', async (req, res) => {
+  console.log('/api/vehicle/autopilot-data');
+  try {
+    const config = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
+    res.json(JSON.parse(config.stdout));
+  } catch (error) {
+    res.status(500).send('Error retrieving configuration');
+  }
+});
+//// VEHICLE :: POST :: FW_UPLOAD
+app.post('/api/vehicle/firmware-upload', (req, res) => {
+  console.log('/api/vehicle/firmware-upload');
   if (!req.files || !req.files.firmware) {
     return res.status(400).send('No files were uploaded.');
   }
