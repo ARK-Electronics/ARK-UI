@@ -1,7 +1,7 @@
 <template>
   <div class="log-viewer-backdrop">
     <div class="log-viewer-container">
-      <h2>Logs for {{ serviceName }}</h2>
+      <h2>{{ serviceName }}</h2>
       <pre class="log-content">
         {{ logs }}
       </pre>
@@ -30,7 +30,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--ark-color-black);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -38,32 +38,32 @@ export default {
 }
 
 .log-viewer-container {
-  background-color: rgba(255, 255, 255, 1);
+  background-color: var(--ark-color-white);
   padding: 30px;
   border-radius: 12px;
   width: 600px;
   max-width: 90%;
   max-height: 80vh;
-  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0px 0px 20px var(--ark-color-black-shadow);
   overflow-y: auto;
 }
 
 h2 {
   text-align: center;
   margin-bottom: 20px;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--ark-color-black);
 }
 
 .log-content {
-  background-color: rgba(245, 245, 245, 1);
+  background-color: var(--ark-color-black-shadow);
   padding: 20px;
-  border-radius: 6px;
-  border: 2px solid rgba(211, 211, 211, 1); /* Light grey border */
+  border-radius: 4px;
+  border: 1px solid var(--ark-color-black-shadow);
   max-height: 60vh;
   overflow-y: auto;
   white-space: pre-wrap; /* Ensures that the text maintains line breaks */
   font-family: monospace; /* Uses a monospaced font for log output */
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--ark-color-black-bold);
 }
 
 .actions {
@@ -79,12 +79,12 @@ h2 {
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
-  background-color: rgba(244, 67, 54, 1); /* Red for close */
-  color: rgba(255, 255, 255, 1);
+  background-color: var(--ark-color-red);
+  color: var(--ark-color-white);;
   transition: background-color 0.3s ease;
 }
 
 .close-button:hover {
-  background-color: rgba(244, 67, 54, 0.8); /* Slightly darker red on hover */
+  background-color: var(--ark-color-red-hover);
 }
 </style>

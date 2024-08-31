@@ -58,22 +58,24 @@
           <button @click="restartService(service.name)">
             <i class="fas fa-sync-alt"></i>
           </button>
-          <button @click="editConfig(service.name)">
+          <button @click="openConfigEditor(service.name)">
             <i class="fas fa-pencil-alt"></i>
           </button>
-          <button @click="viewLogs(service.name)">
+          <button @click="openLogViewer(service.name)">
             <i class="fas fa-book"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Include ConfigEditor component and pass the selected service name -->
+    <!-- Config Editor Modal -->
     <ConfigEditor
-      v-if="selectedService"
+      v-if="showConfigEditor"
       :serviceName="selectedService"
-      @close-editor="selectedService = null"
+      @close-editor="closeConfigEditor"
     />
+
+    <!-- Log Viewer Modal -->
     <LogViewer
       v-if="showLogViewer"
       :serviceName="selectedService"
@@ -87,7 +89,6 @@
 import axios from 'axios';
 import ConfigEditor from './ConfigEditor.vue';
 import LogViewer from './LogViewer.vue';
-
 
 export default {
   components: {
@@ -111,7 +112,9 @@ export default {
         hostname: ''
       },
       selectedService: null,
-      showLogViewer: false
+      logs: '',
+      showConfigEditor: false,
+      showLogViewer: false,
     };
   },
   mounted() {
@@ -137,7 +140,6 @@ export default {
           this.autopilot.gitHash = response.data.git_hash;
           this.autopilot.version = response.data.version;
           this.autopilot.type = response.data.autopilot_type;
-          // Format numerical data to reduce precision
           this.autopilot.voltage = parseFloat(response.data.voltage).toFixed(2);
           this.autopilot.remaining = parseFloat(response.data.remaining).toFixed(0);
           this.autopilot.current = parseFloat(response.data.current).toFixed(2);
@@ -169,10 +171,16 @@ export default {
           alert('Error restarting service');
         });
     },
-    editConfig(serviceName) {
-      this.selectedService = serviceName;  // Set the selected service to trigger the editor
+    openConfigEditor(serviceName) {
+      this.selectedService = serviceName;
+      this.showConfigEditor = true;
     },
-    viewLogs(serviceName) {
+    closeConfigEditor() {
+      this.showConfigEditor = false;
+      this.selectedService = null;
+    },
+    openLogViewer(serviceName) {
+      console.log(`Opening log viewer for ${serviceName}`);
       axios.get(`/api/service/logs?serviceName=${serviceName}`)
         .then(response => {
           if (response.data.status === 'success') {
@@ -191,6 +199,7 @@ export default {
     },
     closeLogViewer() {
       this.showLogViewer = false;
+      this.selectedService = null;
     }
   }
 }

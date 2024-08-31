@@ -1,7 +1,6 @@
 <template>
   <div class="editor-backdrop">
     <div class="editor-container">
-      <h3>{{ "Service Configuration Editor" }}</h3>
       <h1>{{ serviceName }}</h1>
 
       <div v-for="(value, key) in config" :key="key" class="form-group">
@@ -59,7 +58,6 @@ export default {
           if (status === 'success') {
             try {
               this.config = toml.parse(tomlData.trim());
-              console.log('Config loaded:', this.config);
             } catch (error) {
               console.error('Error parsing TOML:', error);
             }
@@ -127,15 +125,9 @@ export default {
   max-height: 90vh;
 }
 
-h3 {
-  text-align: center;
-  margin-top: 0px;
-  color: var(--ark-color-black);
-}
-
 h1 {
   text-align: center;
-  color: var(--ark-color-black-bold);
+  color: var(--ark-color-black);
 }
 
 .form-group {
