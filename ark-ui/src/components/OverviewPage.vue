@@ -74,16 +74,25 @@
       :serviceName="selectedService"
       @close-editor="selectedService = null"
     />
+    <LogViewer
+      v-if="showLogViewer"
+      :serviceName="selectedService"
+      :logs="logs"
+      @close-viewer="closeLogViewer"
+    />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import ConfigEditor from './ConfigEditor.vue';
+import LogViewer from './LogViewer.vue';
+
 
 export default {
   components: {
-    ConfigEditor
+    ConfigEditor,
+    LogViewer
   },
   data() {
     return {
@@ -101,7 +110,8 @@ export default {
         ipAddress: '',
         hostname: ''
       },
-      selectedService: null
+      selectedService: null,
+      showLogViewer: false
     };
   },
   mounted() {
@@ -146,12 +156,12 @@ export default {
         });
     },
     restartService(serviceName) {
-      axios.post(`/api/services/restart/${serviceName}`)
+      axios.post(`/api/service/restart?serviceName=${serviceName}`)
         .then(response => {
           if (response.status === 200) {
-            alert(`Service ${serviceName} restarted successfully`);
+            console.log(`Service ${serviceName} restarted successfully`);
           } else {
-            alert(`Failed to restart service ${serviceName}`);
+            console.error(`Failed to restart service ${serviceName}`);
           }
         })
         .catch(error => {
@@ -163,15 +173,24 @@ export default {
       this.selectedService = serviceName;  // Set the selected service to trigger the editor
     },
     viewLogs(serviceName) {
-      axios.get(`/api/services/logs/${serviceName}`)
+      axios.get(`/api/service/logs?serviceName=${serviceName}`)
         .then(response => {
-          const logs = response.data;
-          this.$modal.show('logsModal', { title: `${serviceName} Logs`, content: logs });
+          if (response.data.status === 'success') {
+            this.logs = response.data.logs;
+            this.selectedService = serviceName;
+            this.showLogViewer = true;
+          } else {
+            console.error('Error fetching logs:', response.data.message);
+            alert('Error fetching logs');
+          }
         })
         .catch(error => {
           console.error('Error fetching logs:', error);
           alert('Error fetching logs');
         });
+    },
+    closeLogViewer() {
+      this.showLogViewer = false;
     }
   }
 }

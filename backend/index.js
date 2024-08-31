@@ -62,7 +62,6 @@ function executeScriptWithProgress(scriptPath, args, socket) {
     socket.emit('error', { message: `Failed to start subprocess: ${err.message}` });
   });
 }
-
 //// SERVICE :: GET :: STATUSES
 app.get('/api/service/statuses', async (req, res) => {
   console.log('/api/service/statuses');
