@@ -44,18 +44,6 @@
       <div v-for="service in services" :key="service.name" class="service-box"
            :class="{'active-glow': service.active === 'active', 'inactive-glow': service.active !== 'active'}">
         <p class="service-name"><strong>{{ service.name }}</strong></p>
-        <div class="status-row">
-          <label class="switch">
-            <input type="checkbox" :checked="service.enabled === 'enabled'" @change="toggleService(service)">
-            <span class="slider round"></span>
-          </label>
-          <p class="status-label">{{ service.enabled === 'enabled' ? 'Enabled' : 'Disabled' }}</p>
-        </div>
-        <div class="status-row">
-          <span class="status-indicator"
-                :class="{'background-green': service.active === 'active', 'background-red': service.active !== 'active'}"></span>
-          <p class="status-label">{{ service.active }}</p>
-        </div>
         <div class="service-actions">
           <button v-if="service.active === 'active'" @click="stopService(service.name)" title="Stop service">
             <i class="fas fa-stop"></i>
@@ -70,6 +58,13 @@
             <i class="fas fa-pencil-alt"></i>
           </button>
           <div v-else class="placeholder"></div>
+        </div>
+        <div class="status-row">
+          <label class="switch">
+            <input type="checkbox" :checked="service.enabled === 'enabled'" @change="toggleService(service)">
+            <span class="slider round"></span>
+          </label>
+          <p class="status-label">{{ 'Autostart' }}</p>
         </div>
       </div>
     </div>
@@ -308,7 +303,6 @@ h1, h2 {
 .service-name {
   font-size: 18px;
   color: var(--ark-color-black);
-  margin: 5px;
   text-align: center;
 }
 
@@ -348,9 +342,9 @@ h1, h2 {
 }
 
 .service-actions button {
-  padding: 5px 10px;
-  font-size: 14px;
+  font-size: 15px;
   border: none;
+  margin: 5px;
   border-radius: 4px;
   background-color: var(--ark-color-white);
   color: var(--ark-color-black);
