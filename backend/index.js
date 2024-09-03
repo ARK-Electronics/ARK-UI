@@ -99,6 +99,58 @@ app.post('/api/service/config', async (req, res) => {
     res.status(500).send(`Error saving configuration for ${serviceName}`);
   }
 });
+//// SERVICE :: POST :: ENABLE
+app.post('/api/service/enable', async (req, res) => {
+  const { serviceName } = req.query;
+  console.log(`/api/service/enable POST for ${serviceName}`);
+
+  try {
+    await execFile('/usr/local/bin/service_enable.sh', [serviceName]);
+    res.send(`Service ${serviceName} enabled successfully.`);
+  } catch (error) {
+    console.error(`Error enabling service ${serviceName}:`, error.message);
+    res.status(500).send(`Error enabling service ${serviceName}`);
+  }
+});
+//// SERVICE :: POST :: DISABLE
+app.post('/api/service/disable', async (req, res) => {
+  const { serviceName } = req.query;
+  console.log(`/api/service/disable POST for ${serviceName}`);
+
+  try {
+    await execFile('/usr/local/bin/service_disable.sh', [serviceName]);
+    res.send(`Service ${serviceName} disabled successfully.`);
+  } catch (error) {
+    console.error(`Error disabling service ${serviceName}:`, error.message);
+    res.status(500).send(`Error disabling service ${serviceName}`);
+  }
+});
+//// SERVICE :: POST :: START
+app.post('/api/service/start', async (req, res) => {
+  const { serviceName } = req.query;
+  console.log(`/api/service/start POST for ${serviceName}`);
+
+  try {
+    await execFile('/usr/local/bin/service_start.sh', [serviceName]);
+    res.send(`Service ${serviceName} started successfully.`);
+  } catch (error) {
+    console.error(`Error starting service ${serviceName}:`, error.message);
+    res.status(500).send(`Error starting service ${serviceName}`);
+  }
+});
+//// SERVICE :: POST :: STOP
+app.post('/api/service/stop', async (req, res) => {
+  const { serviceName } = req.query;
+  console.log(`/api/service/stop POST for ${serviceName}`);
+
+  try {
+    await execFile('/usr/local/bin/service_stop.sh', [serviceName]);
+    res.send(`Service ${serviceName} stopped successfully.`);
+  } catch (error) {
+    console.error(`Error stopping service ${serviceName}:`, error.message);
+    res.status(500).send(`Error stopping service ${serviceName}`);
+  }
+});
 //// SERVICE :: POST :: RESTART
 app.post('/api/service/restart', async (req, res) => {
   const { serviceName } = req.query;
