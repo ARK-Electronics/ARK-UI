@@ -5,6 +5,14 @@
       <router-link class="link" to="/">Overview</router-link>
       <router-link class="link" to="/wifi-config">Network</router-link>
       <router-link class="link" to="/firmware-upload">Firmware</router-link>
+      <a
+        class="link external-link"
+        :href="`http://${hostname}.local/flight-review`"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <i class="fas fa-external-link-alt"></i> Flight Review
+      </a>
     </div>
     <div class="content" :style="{ marginLeft: sidebarWidth + 'px' }">
       <router-view/>
@@ -13,15 +21,19 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'App',
   data() {
     return {
-      sidebarWidth: 152  // Initial width; will be updated
+      sidebarWidth: 152,  // Initial width; will be updated
+      hostname: ''
     };
   },
   mounted() {
     this.adjustSidebarWidth();
+    this.fetchConnectionDetails();
   },
   methods: {
     adjustSidebarWidth() {
@@ -32,7 +44,16 @@ export default {
       });
       // Adjust for padding and any extra space you might want
       this.sidebarWidth = maxWidth + 40; // Extra 40px for padding
-    }
+    },
+    fetchConnectionDetails() {
+      axios.get('/api/network/active-connection')
+        .then(response => {
+          this.hostname = response.data.hostname;
+        })
+        .catch(error => {
+          console.error('Error fetching connection details:', error);
+        });
+    },
   }
 };
 </script>
@@ -88,6 +109,24 @@ export default {
   transform: translateX(5px);
   color: var(--ark-color-white); /* White text on hover */
   background-color: var(--ark-color-green); /* Your green accent color */
+}
+
+/* Style for the external link */
+.external-link {
+  margin-top: auto; /* Push it to the bottom of the sidebar */
+  margin-bottom: 20px; /* Add some space at the bottom */
+  display: flex;
+  align-items: center;
+  color: var(--ark-color-black-bold); /* Different color for external link */
+}
+
+.external-link:hover {
+  background-color: var(--ark-color-white-hover); /* Hover effect for the external link */
+  color: var(--ark-color-blue); /* White text on hover */
+}
+
+.external-link i {
+  margin-right: 8px; /* Space between icon and text */
 }
 
 .content {
