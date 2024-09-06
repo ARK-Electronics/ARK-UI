@@ -56,7 +56,7 @@
           <button @click="openLogViewer(service.name)" title="View journal logs">
             <i class="fas fa-book"></i>
           </button>
-          <button v-if="service.config_available === 'true'" @click="openConfigEditor(service.name)" title="Edit config file">
+          <button v-if="service.config_file !== ''" @click="openConfigEditor(service.name)" title="Edit config file">
             <i class="fas fa-pencil-alt"></i>
           </button>
           <div v-else class="placeholder"></div>
