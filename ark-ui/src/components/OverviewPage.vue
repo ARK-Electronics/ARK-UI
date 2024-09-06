@@ -41,7 +41,9 @@
     </div>
     <h2>Services</h2>
     <div class="services-grid">
-      <div v-for="service in services" :key="service.name" class="service-box"
+      <div v-for="service in services.filter(service => service.visible === 'true')"
+           :key="service.name"
+           class="service-box"
            :class="{'active-glow': service.active === 'active', 'inactive-glow': service.active !== 'active'}">
         <p class="service-name"><strong>{{ service.name }}</strong></p>
         <div class="service-actions">
