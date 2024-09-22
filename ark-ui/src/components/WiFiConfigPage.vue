@@ -31,11 +31,7 @@
     </div>
     <div class="page-section-container">
       <h1>Hostname</h1>
-      <!-- TODO: I want a section here that displays the hostname (not editable) with a button to
-      the right labelled "change" and when you click the button an edit dialogue appears where
-      you can enter the new hostname and click "submit" -->
       <div class="hostname-display">
-        <!-- <span>{{ activeConnection.hostname }}</span> -->
         <p>{{ activeConnection.hostname }}</p>
       </div>
       <form @submit.prevent="submitNewHostname">
@@ -115,7 +111,7 @@ export default {
       this.isLoading = true;
       try {
         console.log("fetchActiveConnection");
-        const response = await axios.get('/api/get-active-connection');
+        const response = await axios.get('/api/network/active-connection');
         this.activeConnection = {
           ssid: response.data.ssid,
           password: response.data.password,
@@ -141,7 +137,7 @@ export default {
       this.isLoading = true;
       try {
         console.log("fetchAPConnection");
-        const response = await axios.get('/api/get-ap-connection');
+        const response = await axios.get('/api/network/ap-connection');
         this.apConnection = {
           ssid: response.data.ssid,
           password: response.data.password
@@ -160,7 +156,7 @@ export default {
         mode: mode
       };
       try {
-        const response = await axios.post('/api/create-connection', payload);
+        const response = await axios.post('/api/network/create-connection', payload);
         console.log('Connection response:', response.data);
         this.fetchActiveConnection(); // Refresh data after setting
       } catch (error) {
@@ -173,7 +169,7 @@ export default {
 
       try {
         const payload = { hostname: this.newHostname };
-        const response = await axios.post('/api/change-hostname', payload);
+        const response = await axios.post('/api/network/change-hostname', payload);
         console.log('Connection response:', response.data);
         this.fetchActiveConnection(); // Refresh data after setting
       } catch (error) {
