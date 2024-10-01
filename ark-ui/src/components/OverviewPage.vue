@@ -241,10 +241,10 @@ export default {
     openConfigEditor(serviceName) {
       this.stopPolling();
       this.selectedService = serviceName;
-      if (serviceName.endsWith('.toml')) {
-        this.showTomlConfigEditor = true;
-      } else {
+      if (serviceName === "mavlink-router") {
         this.showMavlinkConfigEditor = true;
+      } else {
+        this.showTomlConfigEditor = true;
       }
     },
     closeConfigEditor() {
