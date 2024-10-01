@@ -70,6 +70,7 @@ export default {
   --ark-color-blue: rgba(52, 152, 219, 1);
   --ark-color-red: rgba(244, 67, 54, 1);
   --ark-color-red-hover: rgba(244, 67, 54, 0.65);
+  --ark-color-orange: rgba(255, 140, 0, 1);
 }
 
 #app {

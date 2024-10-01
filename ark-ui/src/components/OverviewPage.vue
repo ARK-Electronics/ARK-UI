@@ -44,22 +44,31 @@
       <div v-for="service in services.filter(service => service.visible === 'true')"
            :key="service.name"
            class="service-box"
-           :class="{'active-glow': service.active === 'active', 'inactive-glow': service.active !== 'active'}">
+           :class="{
+            'active-glow': service.active === 'active',
+            'inactive-glow': service.active === 'inactive',
+            'deactivating-glow': service.active === 'deactivating'}">
+
         <p class="service-name"><strong>{{ service.name }}</strong></p>
         <div class="service-actions">
-          <button v-if="service.active === 'active'" @click="stopService(service.name)" title="Stop service">
-            <i class="fas fa-stop"></i>
-          </button>
-          <button v-else @click="startService(service.name)" title="Start service">
-            <i class="fas fa-play"></i>
-          </button>
-          <button @click="openLogViewer(service.name)" title="View journal logs">
-            <i class="fas fa-book"></i>
-          </button>
-          <button v-if="service.config_file !== ''" @click="openConfigEditor(service.name)" title="Edit config file">
-            <i class="fas fa-pencil-alt"></i>
-          </button>
-          <div v-else class="placeholder"></div>
+          <template v-if="service.active === 'deactivating'">
+            <i class="fas fa-spinner fa-spin"></i> <!-- This will show a spinning wheel -->
+          </template>
+          <template v-else>
+            <button v-if="service.active === 'active'" @click="stopService(service.name)" title="Stop service">
+              <i class="fas fa-stop"></i>
+            </button>
+            <button v-if="service.active === 'inactive'" @click="startService(service.name)" title="Start service">
+              <i class="fas fa-play"></i>
+            </button>
+            <button @click="openLogViewer(service.name)" title="View journal logs">
+              <i class="fas fa-book"></i>
+            </button>
+            <button v-if="service.config_file !== ''" @click="openConfigEditor(service.name)" title="Edit config file">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <div v-else class="placeholder"></div>
+          </template>
         </div>
         <div class="status-row">
           <label class="switch">
@@ -116,14 +125,30 @@ export default {
       selectedService: null,
       showConfigEditor: false,
       showLogViewer: false,
+      pollingInterval: null,
     };
   },
   mounted() {
     this.fetchConnectionDetails();
     this.fetchAutopilotData();
     this.fetchServiceStatuses();
+    this.startPolling();
+  },
+  beforeUnmount() {
+    this.stopPolling();
   },
   methods: {
+    startPolling() {
+      this.pollingInterval = setInterval(() => {
+        this.fetchServiceStatuses();
+        this.fetchAutopilotData()
+      }, 1000); // Poll every second
+    },
+    stopPolling() {
+      if (this.pollingInterval) {
+        clearInterval(this.pollingInterval);
+      }
+    },
     fetchConnectionDetails() {
       axios.get('/api/network/active-connection')
         .then(response => {
@@ -324,6 +349,10 @@ h1, h2 {
   box-shadow: 0px 0px 8px var(--ark-color-red);
 }
 
+.deactivating-glow {
+  box-shadow: 0px 0px 8px var(--ark-color-orange);
+}
+
 .service-actions {
   display: flex;
   justify-content: space-around;
@@ -395,6 +424,20 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+.fa-spinner {
+  font-size: 1.5em; /* Adjust size if necessary */
+  color: var(--ark-color-black);
+}
+
+.fa-spinner.fa-spin {
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 </style>
