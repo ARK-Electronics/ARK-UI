@@ -2,7 +2,7 @@
   <div class="log-viewer-backdrop">
     <div class="log-viewer-container">
       <h2>{{ serviceName }}</h2>
-      <pre class="log-content">
+      <pre class="log-content" ref="logContent">
         {{ logs }}
       </pre>
       <div class="actions">
@@ -13,11 +13,61 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  props: ['serviceName', 'logs'],
+  props: ['serviceName'],
+  data() {
+    return {
+      logs: '',
+      logPollingInterval: null
+    };
+  },
+  mounted() {
+    this.startPolling();
+  },
+  beforeUnmount() {
+    this.stopPolling();
+  },
   methods: {
+    fetchLogs() {
+      axios.get(`/api/service/logs?serviceName=${this.serviceName}`)
+        .then(response => {
+          if (response.data.status === 'success') {
+            this.logs = response.data.logs;
+          } else {
+            console.error('Error fetching logs:', response.data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching logs:', error);
+        });
+    },
+    startPolling() {
+      this.fetchLogs(); // Initial fetch
+      this.logPollingInterval = setInterval(() => {
+        this.fetchLogs();
+      }, 1000); // Poll every second
+    },
+    stopPolling() {
+      if (this.logPollingInterval) {
+        clearInterval(this.logPollingInterval);
+      }
+    },
     closeViewer() {
+      this.stopPolling();
       this.$emit('close-viewer');
+    },
+    scrollToBottom() {
+      const logContent = this.$refs.logContent;
+      logContent.scrollTop = logContent.scrollHeight;
+    }
+  },
+  watch: {
+    logs() {
+      this.$nextTick(() => {
+        this.scrollToBottom();
+      });
     }
   }
 }

@@ -82,7 +82,6 @@
     <LogViewer
       v-if="showLogViewer"
       :serviceName="selectedService"
-      :logs="logs"
       @close-viewer="closeLogViewer"
     />
   </div>
@@ -115,7 +114,6 @@ export default {
         hostname: ''
       },
       selectedService: null,
-      logs: '',
       showConfigEditor: false,
       showLogViewer: false,
     };
@@ -217,19 +215,8 @@ export default {
     },
     openLogViewer(serviceName) {
       console.log(`Opening log viewer for ${serviceName}`);
-      axios.get(`/api/service/logs?serviceName=${serviceName}`)
-        .then(response => {
-          if (response.data.status === 'success') {
-            this.logs = response.data.logs;
-            this.selectedService = serviceName;
-            this.showLogViewer = true;
-          } else {
-            console.error('Error fetching logs:', response.data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching logs:', error);
-        });
+      this.selectedService = serviceName;
+      this.showLogViewer = true;
     },
     closeLogViewer() {
       this.showLogViewer = false;
