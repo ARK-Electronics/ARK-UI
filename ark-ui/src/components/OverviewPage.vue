@@ -44,22 +44,31 @@
       <div v-for="service in services.filter(service => service.visible === 'true')"
            :key="service.name"
            class="service-box"
-           :class="{'active-glow': service.active === 'active', 'inactive-glow': service.active !== 'active'}">
+           :class="{
+            'active-glow': service.active === 'active',
+            'inactive-glow': service.active === 'inactive',
+            'deactivating-glow': service.active === 'deactivating'}">
+
         <p class="service-name"><strong>{{ service.name }}</strong></p>
         <div class="service-actions">
-          <button v-if="service.active === 'active'" @click="stopService(service.name)" title="Stop service">
-            <i class="fas fa-stop"></i>
-          </button>
-          <button v-else @click="startService(service.name)" title="Start service">
-            <i class="fas fa-play"></i>
-          </button>
-          <button @click="openLogViewer(service.name)" title="View journal logs">
-            <i class="fas fa-book"></i>
-          </button>
-          <button v-if="service.config_file !== ''" @click="openConfigEditor(service.name)" title="Edit config file">
-            <i class="fas fa-pencil-alt"></i>
-          </button>
-          <div v-else class="placeholder"></div>
+          <template v-if="service.active === 'deactivating'">
+            <i class="fas fa-spinner fa-spin"></i> <!-- This will show a spinning wheel -->
+          </template>
+          <template v-else>
+            <button v-if="service.active === 'active'" @click="stopService(service.name)" title="Stop service">
+              <i class="fas fa-stop"></i>
+            </button>
+            <button v-if="service.active === 'inactive'" @click="startService(service.name)" title="Start service">
+              <i class="fas fa-play"></i>
+            </button>
+            <button @click="openLogViewer(service.name)" title="View journal logs">
+              <i class="fas fa-book"></i>
+            </button>
+            <button v-if="service.config_file !== ''" @click="openConfigEditor(service.name)" title="Edit config file">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <div v-else class="placeholder"></div>
+          </template>
         </div>
         <div class="status-row">
           <label class="switch">
@@ -71,9 +80,14 @@
       </div>
     </div>
 
-    <!-- Config Editor Modal -->
-    <ConfigEditor
-      v-if="showConfigEditor"
+    <TomlConfigEditor
+      v-if="showTomlConfigEditor"
+      :serviceName="selectedService"
+      @close-editor="closeConfigEditor"
+    />
+
+    <MavlinkConfigEditor
+      v-if="showMavlinkConfigEditor"
       :serviceName="selectedService"
       @close-editor="closeConfigEditor"
     />
@@ -82,7 +96,6 @@
     <LogViewer
       v-if="showLogViewer"
       :serviceName="selectedService"
-      :logs="logs"
       @close-viewer="closeLogViewer"
     />
   </div>
@@ -90,12 +103,14 @@
 
 <script>
 import axios from 'axios';
-import ConfigEditor from './ConfigEditor.vue';
+import TomlConfigEditor from './TomlConfigEditor.vue';
+import MavlinkConfigEditor from './MavlinkConfigEditor.vue';
 import LogViewer from './LogViewer.vue';
 
 export default {
   components: {
-    ConfigEditor,
+    TomlConfigEditor,
+    MavlinkConfigEditor,
     LogViewer
   },
   data() {
@@ -115,17 +130,33 @@ export default {
         hostname: ''
       },
       selectedService: null,
-      logs: '',
-      showConfigEditor: false,
+      showTomlConfigEditor: false,
+      showMavlinkConfigEditor: false,
       showLogViewer: false,
+      pollingInterval: null,
     };
   },
   mounted() {
     this.fetchConnectionDetails();
     this.fetchAutopilotData();
     this.fetchServiceStatuses();
+    this.startPolling();
+  },
+  beforeUnmount() {
+    this.stopPolling();
   },
   methods: {
+    startPolling() {
+      this.pollingInterval = setInterval(() => {
+        this.fetchServiceStatuses();
+        this.fetchAutopilotData()
+      }, 1000); // Poll every second
+    },
+    stopPolling() {
+      if (this.pollingInterval) {
+        clearInterval(this.pollingInterval);
+      }
+    },
     fetchConnectionDetails() {
       axios.get('/api/network/active-connection')
         .then(response => {
@@ -208,28 +239,24 @@ export default {
         });
     },
     openConfigEditor(serviceName) {
+      this.stopPolling();
       this.selectedService = serviceName;
-      this.showConfigEditor = true;
+      if (serviceName.endsWith('.toml')) {
+        this.showTomlConfigEditor = true;
+      } else {
+        this.showMavlinkConfigEditor = true;
+      }
     },
     closeConfigEditor() {
-      this.showConfigEditor = false;
+      this.startPolling();
+      this.showTomlConfigEditor = false;
+      this.showMavlinkConfigEditor = false;
       this.selectedService = null;
     },
     openLogViewer(serviceName) {
       console.log(`Opening log viewer for ${serviceName}`);
-      axios.get(`/api/service/logs?serviceName=${serviceName}`)
-        .then(response => {
-          if (response.data.status === 'success') {
-            this.logs = response.data.logs;
-            this.selectedService = serviceName;
-            this.showLogViewer = true;
-          } else {
-            console.error('Error fetching logs:', response.data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching logs:', error);
-        });
+      this.selectedService = serviceName;
+      this.showLogViewer = true;
     },
     closeLogViewer() {
       this.showLogViewer = false;
@@ -337,6 +364,10 @@ h1, h2 {
   box-shadow: 0px 0px 8px var(--ark-color-red);
 }
 
+.deactivating-glow {
+  box-shadow: 0px 0px 8px var(--ark-color-orange);
+}
+
 .service-actions {
   display: flex;
   justify-content: space-around;
@@ -408,6 +439,20 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+.fa-spinner {
+  font-size: 1.5em; /* Adjust size if necessary */
+  color: var(--ark-color-black);
+}
+
+.fa-spinner.fa-spin {
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 </style>
