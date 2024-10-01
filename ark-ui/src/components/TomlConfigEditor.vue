@@ -53,16 +53,16 @@ export default {
         .get(`/api/service/config?serviceName=${this.serviceName}`)
         .then((response) => {
           const status = response.data.status;
-          const tomlData = response.data.data;
+          const configData = response.data.data;
 
           if (status === 'success') {
             try {
-              this.config = toml.parse(tomlData.trim());
+              this.config = toml.parse(configData.trim());
             } catch (error) {
               console.error('Error parsing TOML:', error);
             }
           } else {
-            console.error('Failed to load config:', tomlData);
+            console.error('Failed to load config:', configData);
           }
         })
         .catch((error) => {

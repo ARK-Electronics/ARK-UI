@@ -80,9 +80,14 @@
       </div>
     </div>
 
-    <!-- Config Editor Modal -->
-    <ConfigEditor
-      v-if="showConfigEditor"
+    <TomlConfigEditor
+      v-if="showTomlConfigEditor"
+      :serviceName="selectedService"
+      @close-editor="closeConfigEditor"
+    />
+
+    <MavlinkConfigEditor
+      v-if="showMavlinkConfigEditor"
       :serviceName="selectedService"
       @close-editor="closeConfigEditor"
     />
@@ -98,12 +103,14 @@
 
 <script>
 import axios from 'axios';
-import ConfigEditor from './ConfigEditor.vue';
+import TomlConfigEditor from './TomlConfigEditor.vue';
+import MavlinkConfigEditor from './MavlinkConfigEditor.vue';
 import LogViewer from './LogViewer.vue';
 
 export default {
   components: {
-    ConfigEditor,
+    TomlConfigEditor,
+    MavlinkConfigEditor,
     LogViewer
   },
   data() {
@@ -123,7 +130,8 @@ export default {
         hostname: ''
       },
       selectedService: null,
-      showConfigEditor: false,
+      showTomlConfigEditor: false,
+      showMavlinkConfigEditor: false,
       showLogViewer: false,
       pollingInterval: null,
     };
@@ -231,11 +239,18 @@ export default {
         });
     },
     openConfigEditor(serviceName) {
+      this.stopPolling();
       this.selectedService = serviceName;
-      this.showConfigEditor = true;
+      if (serviceName.endsWith('.toml')) {
+        this.showTomlConfigEditor = true;
+      } else {
+        this.showMavlinkConfigEditor = true;
+      }
     },
     closeConfigEditor() {
-      this.showConfigEditor = false;
+      this.startPolling();
+      this.showTomlConfigEditor = false;
+      this.showMavlinkConfigEditor = false;
       this.selectedService = null;
     },
     openLogViewer(serviceName) {
