@@ -169,7 +169,7 @@ export default {
         });
     },
     fetchAutopilotData() {
-      axios.get('/api/vehicle/autopilot-data')
+      axios.get('/api/vehicle/autopilot-details')
         .then(response => {
           this.autopilot.gitHash = response.data.git_hash;
           this.autopilot.version = response.data.version;
