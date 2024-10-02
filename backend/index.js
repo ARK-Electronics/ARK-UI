@@ -86,7 +86,8 @@ app.get('/api/service/statuses', async (req, res) => {
     const result = await execScript('service_get_statuses.sh');
     res.json(JSON.parse(result));
   } catch (error) {
-    res.status(500).send('Error retrieving configuration');
+    res.status(500).send('Error retrieving service statuses');
+    console.error('Error retrieving service statuses');
   }
 });
 //// SERVICE :: GET :: CONFIG
@@ -97,8 +98,8 @@ app.get('/api/service/config', async (req, res) => {
     const result = await execScript('service_get_config.sh', [serviceName]);
     res.json(JSON.parse(result));
   } catch (error) {
-    console.error(`Error retrieving configuration for ${serviceName}:`, error.message);
     res.status(500).send(`Error retrieving configuration for ${serviceName}`);
+    console.error(`Error retrieving configuration for ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: POST :: CONFIG
@@ -110,8 +111,8 @@ app.post('/api/service/config', async (req, res) => {
     const result = await execScript('service_save_config.sh', [serviceName, config]);
     res.json(JSON.parse(result));
   } catch (error) {
-    console.error(`Error saving configuration for ${serviceName}:`, error.message);
     res.status(500).send(`Error saving configuration for ${serviceName}`);
+    console.error(`Error saving configuration for ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: POST :: ENABLE
@@ -122,8 +123,8 @@ app.post('/api/service/enable', async (req, res) => {
     await execScript('service_enable.sh', [serviceName]);
     res.send(`Service ${serviceName} enabled successfully.`);
   } catch (error) {
-    console.error(`Error enabling service ${serviceName}:`, error.message);
     res.status(500).send(`Error enabling service ${serviceName}`);
+    console.error(`Error enabling service ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: POST :: DISABLE
@@ -134,8 +135,8 @@ app.post('/api/service/disable', async (req, res) => {
     await execScript('service_disable.sh', [serviceName]);
     res.send(`Service ${serviceName} disabled successfully.`);
   } catch (error) {
-    console.error(`Error disabling service ${serviceName}:`, error.message);
     res.status(500).send(`Error disabling service ${serviceName}`);
+    console.error(`Error disabling service ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: POST :: START
@@ -146,8 +147,8 @@ app.post('/api/service/start', async (req, res) => {
     await execScript('service_start.sh', [serviceName]);
     res.send(`Service ${serviceName} started successfully.`);
   } catch (error) {
-    console.error(`Error starting service ${serviceName}:`, error.message);
     res.status(500).send(`Error starting service ${serviceName}`);
+    console.error(`Error starting service ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: POST :: STOP
@@ -158,8 +159,8 @@ app.post('/api/service/stop', async (req, res) => {
     await execScript('service_stop.sh', [serviceName]);
     res.send(`Service ${serviceName} stopped successfully.`);
   } catch (error) {
-    console.error(`Error stopping service ${serviceName}:`, error.message);
     res.status(500).send(`Error stopping service ${serviceName}`);
+    console.error(`Error stopping service ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: POST :: RESTART
@@ -170,8 +171,8 @@ app.post('/api/service/restart', async (req, res) => {
     await execScript('service_restart.sh', [serviceName]);
     res.send(`Service ${serviceName} restarted successfully.`);
   } catch (error) {
-    console.error(`Error restarting service ${serviceName}:`, error.message);
     res.status(500).send(`Error restarting service ${serviceName}`);
+    console.error(`Error restarting service ${serviceName}:`, error.message);
   }
 });
 //// SERVICE :: GET :: LOGS
@@ -182,8 +183,8 @@ app.get('/api/service/logs', async (req, res) => {
     const result = await execScript('service_get_logs.sh', [serviceName]);
     res.send(result);
   } catch (error) {
-    console.error(`Error retrieving logs for ${serviceName}:`, error.message);
     res.status(500).send(`Error retrieving logs for ${serviceName}`);
+    console.error(`Error retrieving logs for ${serviceName}:`, error.message);
   }
 });
 //// NETWORK :: GET :: ACTIVE_CONN
@@ -193,7 +194,8 @@ app.get('/api/network/active-connection', async (req, res) => {
     const result = await execScript('network_active_connection_details.sh');
     res.json(JSON.parse(result));
   } catch (error) {
-    res.status(500).send('Error retrieving configuration');
+    res.status(500).send('Error retrieving active connection details');
+    console.error(`Error retrieving active connection details`);
   }
 });
 //// NETWORK :: GET :: AP_CONN
@@ -204,6 +206,7 @@ app.get('/api/network/ap-connection', async (req, res) => {
     res.json(JSON.parse(result));
   } catch (error) {
     res.status(500).send('Error retrieving AP connection details');
+    console.error(`Error retrieving AP connection details`);
   }
 });
 //// NETWORK :: POST :: CREATE_CONN
@@ -215,7 +218,8 @@ app.post('/api/network/create-connection', async (req, res) => {
     const result = await execScript(`${script}`, [ssid, password]);
     res.json(JSON.parse(result));
   } catch (error) {
-    res.status(500).send('Connection failed');
+    res.status(500).send('Error creating connection failed');
+    console.error(`Error creating connection failed`);
   }
 });
 //// NETWORK :: POST :: HOSTNAME
@@ -224,7 +228,8 @@ app.post('/api/network/change-hostname', async (req, res) => {
   try {
     await execScript(`network_change_hostname.sh`, [req.body.hostname]);
   } catch (error) {
-    res.status(500).send('Connection failed');
+    res.status(500).send('Error changing hostname failed');
+    console.error(`Error changing hostname failed`);
   }
 });
 //// VEHICLE :: GET :: STATUSES
@@ -234,7 +239,9 @@ app.get('/api/vehicle/autopilot-details', async (req, res) => {
     const result = await execScript('mavlink_autopilot_details.sh');
     res.json(JSON.parse(result));
   } catch (error) {
-    res.status(500).send('Error retrieving atuopilot details');
+    res.status(500).send('Error retrieving autopilot details');
+    console.error(`Error retrieving autopilot details`);
+
   }
 });
 //// VEHICLE :: POST :: FW_UPLOAD
@@ -250,7 +257,8 @@ app.post('/api/vehicle/firmware-upload', (req, res) => {
   const socket = io.sockets.sockets.get(socketId);
 
   if (!socket) {
-    return res.status(404).send('Socket connection not found.');
+    return res.status(404).send('Socket connection not found. Firmware upload failed.');
+    console.error(`Error firmware upload failed`);
   }
 
   firmwareFile.mv(uploadPath, (err) => {
