@@ -66,7 +66,7 @@ function executeScriptWithProgress(scriptPath, args, socket) {
 app.get('/api/service/statuses', async (req, res) => {
   console.log('/api/service/statuses');
   try {
-    const config = await execFile('/usr/local/bin/service_get_statuses.sh');
+    const config = await exec('service_get_statuses.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -77,7 +77,7 @@ app.get('/api/service/config', async (req, res) => {
   const { serviceName } = req.query;
   console.log(`/api/service/config GET for ${serviceName}`);
   try {
-    const { stdout } = await execFile('/usr/local/bin/service_get_config.sh', [serviceName]);
+    const { stdout } = await exec('service_get_config.sh', [serviceName]);
     res.json(JSON.parse(stdout));
     console.log(`data: ${stdout}`);
   } catch (error) {
@@ -91,7 +91,7 @@ app.post('/api/service/config', async (req, res) => {
   const { config } = req.body;
   console.log(`/api/service/config POST for ${serviceName}`);
   try {
-    const { stdout } = await execFile('/usr/local/bin/service_save_config.sh', [serviceName, config]);
+    const { stdout } = await exec('service_save_config.sh', [serviceName, config]);
     const result = JSON.parse(stdout);
     res.json(result);
   } catch (error) {
@@ -105,7 +105,7 @@ app.post('/api/service/enable', async (req, res) => {
   console.log(`/api/service/enable POST for ${serviceName}`);
 
   try {
-    await execFile('/usr/local/bin/service_enable.sh', [serviceName]);
+    await exec('service_enable.sh', [serviceName]);
     res.send(`Service ${serviceName} enabled successfully.`);
   } catch (error) {
     console.error(`Error enabling service ${serviceName}:`, error.message);
@@ -118,7 +118,7 @@ app.post('/api/service/disable', async (req, res) => {
   console.log(`/api/service/disable POST for ${serviceName}`);
 
   try {
-    await execFile('/usr/local/bin/service_disable.sh', [serviceName]);
+    await exec('service_disable.sh', [serviceName]);
     res.send(`Service ${serviceName} disabled successfully.`);
   } catch (error) {
     console.error(`Error disabling service ${serviceName}:`, error.message);
@@ -131,7 +131,7 @@ app.post('/api/service/start', async (req, res) => {
   console.log(`/api/service/start POST for ${serviceName}`);
 
   try {
-    await execFile('/usr/local/bin/service_start.sh', [serviceName]);
+    await exec('service_start.sh', [serviceName]);
     res.send(`Service ${serviceName} started successfully.`);
   } catch (error) {
     console.error(`Error starting service ${serviceName}:`, error.message);
@@ -144,7 +144,7 @@ app.post('/api/service/stop', async (req, res) => {
   console.log(`/api/service/stop POST for ${serviceName}`);
 
   try {
-    await execFile('/usr/local/bin/service_stop.sh', [serviceName]);
+    await exec('service_stop.sh', [serviceName]);
     res.send(`Service ${serviceName} stopped successfully.`);
   } catch (error) {
     console.error(`Error stopping service ${serviceName}:`, error.message);
@@ -157,7 +157,7 @@ app.post('/api/service/restart', async (req, res) => {
   console.log(`/api/service/restart POST for ${serviceName}`);
 
   try {
-    await execFile('/usr/local/bin/service_restart.sh', [serviceName]);
+    await exec('service_restart.sh', [serviceName]);
     res.send(`Service ${serviceName} restarted successfully.`);
   } catch (error) {
     console.error(`Error restarting service ${serviceName}:`, error.message);
@@ -170,7 +170,7 @@ app.get('/api/service/logs', async (req, res) => {
   console.log(`/api/service/logs GET for ${serviceName}`);
 
   try {
-    const { stdout } = await execFile('/usr/local/bin/service_get_logs.sh', [serviceName]);
+    const { stdout } = await exec('service_get_logs.sh', [serviceName]);
     res.send(stdout);
   } catch (error) {
     console.error(`Error retrieving logs for ${serviceName}:`, error.message);
@@ -181,7 +181,7 @@ app.get('/api/service/logs', async (req, res) => {
 app.get('/api/network/active-connection', async (req, res) => {
   console.log('/api/network/active-connection');
   try {
-    const config = await execFile('/usr/local/bin/network_active_connection_details.sh');
+    const config = await exec('network_active_connection_details.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -191,7 +191,7 @@ app.get('/api/network/active-connection', async (req, res) => {
 app.get('/api/network/ap-connection', async (req, res) => {
   console.log('/api/network/ap-connection');
   try {
-    const config = await execFile('/usr/local/bin/network_ap_connection_details.sh');
+    const config = await exec('network_ap_connection_details.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -223,7 +223,7 @@ app.post('/api/network/change-hostname', async (req, res) => {
 app.get('/api/vehicle/autopilot-data', async (req, res) => {
   console.log('/api/vehicle/autopilot-data');
   try {
-    const config = await execFile('/usr/local/bin/mavlink_autopilot_details.sh');
+    const config = await exec('mavlink_autopilot_details.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
