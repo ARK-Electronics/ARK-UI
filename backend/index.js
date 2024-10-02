@@ -181,7 +181,7 @@ app.get('/api/service/logs', async (req, res) => {
 app.get('/api/network/active-connection', async (req, res) => {
   console.log('/api/network/active-connection');
   try {
-    const config = await execFile('/usr/local/bin/get_active_connection_details.sh');
+    const config = await execFile('/usr/local/bin/network_active_connection_details.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -191,7 +191,7 @@ app.get('/api/network/active-connection', async (req, res) => {
 app.get('/api/network/ap-connection', async (req, res) => {
   console.log('/api/network/ap-connection');
   try {
-    const config = await execFile('/usr/local/bin/get_ap_connection_details.sh');
+    const config = await execFile('/usr/local/bin/network_ap_connection_details.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -201,7 +201,7 @@ app.get('/api/network/ap-connection', async (req, res) => {
 app.post('/api/network/create-connection', async (req, res) => {
   console.log('/api/network/create-connection');
   const { ssid, password, mode } = req.body;
-  const script = mode === 'ap' ? 'create_ap_connection.sh' : 'create_infra_connection.sh';
+  const script = mode === 'ap' ? 'network_create_ap_connection.sh' : 'network_create_infra_connection.sh';
 
   try {
     const result = await execFile(`/usr/local/bin/${script}`, [ssid, password]);
@@ -214,7 +214,7 @@ app.post('/api/network/create-connection', async (req, res) => {
 app.post('/api/network/change-hostname', async (req, res) => {
   console.log('/api/network/change-hostname');
   try {
-    await execFile(`/usr/local/bin/change_hostname.sh`, [req.body.hostname]);
+    await execFile(`/usr/local/bin/network_change_hostname.sh`, [req.body.hostname]);
   } catch (error) {
     res.status(500).send('Connection failed');
   }
@@ -223,7 +223,7 @@ app.post('/api/network/change-hostname', async (req, res) => {
 app.get('/api/vehicle/autopilot-data', async (req, res) => {
   console.log('/api/vehicle/autopilot-data');
   try {
-    const config = await execFile('/usr/local/bin/mavlink_autopilot_data.sh');
+    const config = await execFile('/usr/local/bin/mavlink_autopilot_details.sh');
     res.json(JSON.parse(config.stdout));
   } catch (error) {
     res.status(500).send('Error retrieving configuration');
@@ -250,7 +250,7 @@ app.post('/api/vehicle/firmware-upload', (req, res) => {
       console.error('File move error:', err);
       return res.status(500).send('Failed to save the file');
     }
-    executeScriptWithProgress('/usr/local/bin/flash_px4.sh', [uploadPath], socket);
+    executeScriptWithProgress('/usr/local/bin/px4_flash.sh', [uploadPath], socket);
     res.send({ message: 'Starting...' });
   });
 });
