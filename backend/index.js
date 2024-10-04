@@ -6,6 +6,8 @@ const util = require('util');
 const execPromise = util.promisify(exec);
 const fileUpload = require('express-fileupload');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -107,8 +109,20 @@ app.post('/api/service/config', async (req, res) => {
   const { serviceName } = req.query;
   const { config } = req.body;
   console.log(`/api/service/config POST for ${serviceName}`);
+
   try {
-    const result = await execScript('service_save_config.sh', [serviceName, config]);
+    // Create a temporary file to store the configuration
+    const tempFilePath = path.join('/tmp', `${serviceName}-config.tmp`);
+
+    // Write the configuration data to the temp file
+    fs.writeFileSync(tempFilePath, config, 'utf-8');
+
+    // Pass the temp file path to the script instead of the config data
+    const result = await execScript('service_save_config.sh', [serviceName, tempFilePath]);
+    console.log(`Temporary config file path: ${tempFilePath}`);
+    // Remove the temp file after the script has processed it
+    // fs.unlinkSync(tempFilePath);
+
     res.json(JSON.parse(result));
   } catch (error) {
     res.status(500).send(`Error saving configuration for ${serviceName}`);

@@ -7,8 +7,19 @@
         <div v-for="(endpoint, index) in endpoints" :key="index" :class="['endpoint-row', endpoint.isEditing ? 'editing' : '']">
           <div class="endpoint-header">
             <!-- Endpoint Name (Editable if Unlocked) -->
-            <input v-if="endpoint.isEditing" v-model="endpoint.name" class="editable-input" />
-            <p v-else><strong>{{ endpoint.name }}</strong></p>
+            <div class="name-input-wrapper">
+              <input
+                v-if="endpoint.isEditing"
+                v-model="endpoint.name"
+                class="editable-input"
+                :class="{ 'error': !endpoint.name }"
+                placeholder="Enter endpoint name"
+              />
+              <p v-else><strong>{{ endpoint.name }}</strong></p>
+
+              <!-- Required Tag if Name is Empty -->
+              <p v-if="!endpoint.name && endpoint.isEditing" class="required-tag">Required</p>
+            </div>
 
             <!-- Endpoint Type (Editable if Unlocked) -->
             <select v-if="endpoint.isEditing" v-model="endpoint.type" @change="handleTypeChange(index)" class="editable-select">
@@ -93,6 +104,7 @@ export default {
   props: ['serviceName'],
   data() {
     return {
+      originalConfigLines: null,
       endpoints: [],
     };
   },
@@ -103,7 +115,10 @@ export default {
     loadConfig() {
       axios.get(`/api/service/config?serviceName=${this.serviceName}`)
         .then(response => {
-          this.endpoints = this.parseEndpoints(response.data.data);
+          const configData = response.data.data;
+          // Store the original file lines
+          this.originalConfigLines = configData.split('\n');
+          this.endpoints = this.parseEndpoints(configData);
         })
         .catch(error => {
           console.error('Error fetching config:', error);
@@ -146,6 +161,119 @@ export default {
       if (currentEndpoint) parsedEndpoints.push(currentEndpoint); // Push the last endpoint
       return parsedEndpoints;
     },
+    saveConfig() {
+      // Check for any endpoints with empty names before saving
+      const hasInvalidEndpoints = this.endpoints.some(endpoint => !endpoint.name);
+
+      if (hasInvalidEndpoints) {
+        alert('Please provide names for all endpoints.');
+        return;
+      }
+
+      // Check for duplicate endpoint names
+      const endpointNames = this.endpoints.map(endpoint => endpoint.name);
+      const duplicateNames = endpointNames.filter((name, index, self) => self.indexOf(name) !== index);
+
+      if (duplicateNames.length > 0) {
+        alert('Duplicate endpoint names found. Please ensure all endpoint names are unique.');
+        return;
+      }
+
+      const updatedConfigLines = this.generateUpdatedConfigLines();
+      axios.post(`/api/service/config?serviceName=${this.serviceName}`, { config: updatedConfigLines.join('\n') })
+        .then(response => {
+          if (response.data.status === 'success') {
+            this.$emit('close-editor');
+          } else {
+            alert('Error saving configuration');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving config:', error);
+        });
+    },
+    generateUpdatedConfigLines() {
+      const updatedConfigLines = [];
+      const endpointsToKeep = new Set(this.endpoints.map(ep => ep.name)); // Endpoint names to keep
+      let insideEndpointSection = false;
+      let currentEndpoint = null;
+      let skipSection = false;
+      let sectionLines = [];
+
+      this.originalConfigLines.forEach((line) => {
+        const trimmed = line.trim();
+
+        // Check if this is the start of a new section
+        if (trimmed.startsWith('[')) {
+          // Before processing a new section, add the previous one if it's not deleted
+          if (!skipSection && insideEndpointSection && currentEndpoint) {
+            updatedConfigLines.push(...sectionLines);
+          }
+
+          const match = trimmed.match(/\[(.*?) (.*?)\]/);
+          if (match) {
+            const type = match[1];
+            const name = match[2];
+
+            // Determine if this section is an endpoint
+            if (type === 'UdpEndpoint' || type === 'UartEndpoint' || type === 'TcpEndpoint') {
+              insideEndpointSection = true;
+              currentEndpoint = this.endpoints.find(ep => ep.name === name);
+
+              // If the endpoint is to be kept, prepare to update/keep its section
+              if (endpointsToKeep.has(name)) {
+                sectionLines = []; // Buffer to hold lines for this section
+                sectionLines.push(line); // Add the section header
+                skipSection = false; // We're keeping this section
+              } else {
+                skipSection = true; // We're skipping this section (deleted endpoint)
+              }
+            } else {
+              // Non-endpoint sections, just add them directly
+              insideEndpointSection = false;
+              currentEndpoint = null;
+              updatedConfigLines.push(line);
+              skipSection = false;
+            }
+          } else {
+            insideEndpointSection = false;
+            currentEndpoint = null;
+            updatedConfigLines.push(line); // If no match, continue adding lines
+          }
+        } else if (insideEndpointSection && !skipSection) {
+          // If inside an endpoint section that we're keeping, update the lines
+          const [key] = trimmed.split('=').map(str => str.trim());
+          if (key in currentEndpoint.config) {
+            sectionLines.push(`${key} = ${currentEndpoint.config[key]}`);
+          } else {
+            sectionLines.push(line); // Preserve other lines (e.g., comments)
+          }
+        } else if (!insideEndpointSection && !skipSection) {
+          // Outside of any endpoint section, keep the line as is
+          updatedConfigLines.push(line);
+        }
+      });
+
+      // If we ended inside a section, add it
+      if (!skipSection && insideEndpointSection && currentEndpoint) {
+        updatedConfigLines.push(...sectionLines);
+      }
+
+      // Append any new endpoints that weren't part of the original config
+      this.endpoints.forEach(endpoint => {
+        const sectionHeader = `[${endpoint.type}Endpoint ${endpoint.name}]`;
+        if (!this.originalConfigLines.some(line => line.includes(sectionHeader))) {
+          // New endpoint, append to the end of the config
+          updatedConfigLines.push(sectionHeader);
+          for (const key in endpoint.config) {
+            updatedConfigLines.push(`${key} = ${endpoint.config[key]}`);
+          }
+          updatedConfigLines.push(''); // Add a blank line after the section
+        }
+      });
+
+      return updatedConfigLines;
+    },
     getDefaultConfig(type) {
       // Provide default config based on the endpoint type
       switch (type) {
@@ -162,7 +290,7 @@ export default {
     addEndpoint() {
       this.endpoints.push({
         type: 'Udp', // Default type
-        name: 'new-endpoint',
+        name: '',
         config: this.getDefaultConfig('Udp'),
         isEditing: true
       });
@@ -177,35 +305,11 @@ export default {
     },
     removeEndpoint(index) {
       this.endpoints.splice(index, 1);
-    },
-    saveConfig() {
-      const configString = this.generateConfigString();
-      axios.post(`/api/service/config?serviceName=${this.serviceName}`, { config: configString })
-        .then(response => {
-          if (response.data.status === 'success') {
-            this.$emit('close-editor');
-          } else {
-            alert('Error saving configuration');
-          }
-        })
-        .catch(error => {
-          console.error('Error saving config:', error);
-        });
+      this.generateUpdatedConfigLines();
     },
     cancelConfig() {
       this.$emit('close-editor');
     },
-    generateConfigString() {
-      let configString = '';
-      this.endpoints.forEach(endpoint => {
-        configString += `[${endpoint.type}Endpoint ${endpoint.name}]\n`;
-        for (const key in endpoint.config) {
-          configString += `${key} = ${endpoint.config[key]}\n`;
-        }
-        configString += '\n';
-      });
-      return configString;
-    }
   }
 };
 
@@ -257,6 +361,20 @@ export default {
   grid-template-columns: 1fr 1fr auto auto;
   align-items: center;
   gap: 10px;
+}
+
+.name-input-wrapper {
+  position: relative;
+}
+
+.editable-input.error {
+  border: 2px solid red;
+}
+
+.required-tag {
+  color: red;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 .editable-input,
