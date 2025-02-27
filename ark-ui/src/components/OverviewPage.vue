@@ -80,14 +80,14 @@
       </div>
     </div>
 
-    <TomlConfigEditor
-      v-if="showTomlConfigEditor"
+    <TomlEditor
+      v-if="showTomlEditor"
       :serviceName="selectedService"
       @close-editor="closeConfigEditor"
     />
 
-    <MavlinkConfigEditor
-      v-if="showMavlinkConfigEditor"
+    <MavlinkRouterEditor
+      v-if="showMavlinkRouterEditor"
       :serviceName="selectedService"
       @close-editor="closeConfigEditor"
     />
@@ -103,14 +103,14 @@
 
 <script>
 import axios from 'axios';
-import TomlConfigEditor from './TomlConfigEditor.vue';
-import MavlinkConfigEditor from './MavlinkConfigEditor.vue';
+import TomlEditor from './TomlEditor.vue';
+import MavlinkRouterEditor from './MavlinkRouterEditor.vue';
 import LogViewer from './LogViewer.vue';
 
 export default {
   components: {
-    TomlConfigEditor,
-    MavlinkConfigEditor,
+    TomlEditor,
+    MavlinkRouterEditor,
     LogViewer
   },
   data() {
@@ -130,8 +130,8 @@ export default {
         hostname: ''
       },
       selectedService: null,
-      showTomlConfigEditor: false,
-      showMavlinkConfigEditor: false,
+      showTomlEditor: false,
+      showMavlinkRouterEditor: false,
       showLogViewer: false,
       pollingInterval: null,
     };
@@ -242,15 +242,15 @@ export default {
       this.stopPolling();
       this.selectedService = serviceName;
       if (serviceName === "mavlink-router") {
-        this.showMavlinkConfigEditor = true;
+        this.showMavlinkRouterEditor = true;
       } else {
-        this.showTomlConfigEditor = true;
+        this.showTomlEditor = true;
       }
     },
     closeConfigEditor() {
       this.startPolling();
-      this.showTomlConfigEditor = false;
-      this.showMavlinkConfigEditor = false;
+      this.showTomlEditor = false;
+      this.showMavlinkRouterEditor = false;
       this.selectedService = null;
     },
     openLogViewer(serviceName) {
