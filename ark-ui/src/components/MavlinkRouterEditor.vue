@@ -1,97 +1,101 @@
 <template>
   <div class="editor-backdrop">
     <div class="editor-container">
-      <h1>Mavlink Router Endpoints</h1>
+      <div class="editor-content">
+        <h1>Mavlink Router Endpoints</h1>
 
-      <div class="endpoint-list">
-        <div v-for="(endpoint, index) in endpoints" :key="index" :class="['endpoint-row', endpoint.isEditing ? 'editing' : '']">
-          <div class="endpoint-header">
-            <!-- Endpoint Name (Editable if Unlocked) -->
-            <div class="name-input-wrapper">
-              <input
-                v-if="endpoint.isEditing"
-                v-model="endpoint.name"
-                class="editable-input"
-                :class="{ 'error': !endpoint.name }"
-                placeholder="Enter endpoint name"
-              />
-              <p v-else><strong>{{ endpoint.name }}</strong></p>
+        <div class="endpoint-list">
+          <div v-for="(endpoint, index) in endpoints" :key="index" :class="['endpoint-row', endpoint.isEditing ? 'editing' : '']">
+            <div class="endpoint-header">
+              <!-- Endpoint Name (Editable if Unlocked) -->
+              <div class="name-input-wrapper">
+                <input
+                  v-if="endpoint.isEditing"
+                  v-model="endpoint.name"
+                  class="editable-input"
+                  :class="{ 'error': !endpoint.name }"
+                  placeholder="Enter endpoint name"
+                />
+                <p v-else><strong>{{ endpoint.name }}</strong></p>
 
-              <!-- Required Tag if Name is Empty -->
-              <p v-if="!endpoint.name && endpoint.isEditing" class="required-tag">Required</p>
-            </div>
+                <!-- Required Tag if Name is Empty -->
+                <p v-if="!endpoint.name && endpoint.isEditing" class="required-tag">Required</p>
+              </div>
 
-            <!-- Endpoint Type (Editable if Unlocked) -->
-            <select v-if="endpoint.isEditing" v-model="endpoint.type" @change="handleTypeChange(index)" class="editable-select">
-              <option value="Udp">UDP</option>
-              <option value="Uart">UART</option>
-              <option value="Tcp">TCP</option>
-            </select>
-            <p v-else class="uppercase">{{ endpoint.type }}</p>
-
-            <!-- Delete Button (Only visible when unlocked) -->
-            <button v-if="endpoint.isEditing" class="remove-button" @click="removeEndpoint(index)">
-              <i class="fas fa-trash"></i>
-            </button>
-
-            <!-- Lock/Unlock Button -->
-            <button class="lock-button" @click="toggleEdit(index)">
-              <i :class="endpoint.isEditing ? 'fas fa-lock-open' : 'fas fa-lock'"></i>
-            </button>
-          </div>
-
-          <!-- Display endpoint options based on type -->
-          <div class="endpoint-details">
-            <!-- Udp Endpoint Options -->
-            <div v-if="endpoint.type === 'Udp'">
-              <label>Mode</label>
-              <select v-model="endpoint.config.Mode" :disabled="!endpoint.isEditing">
-                <option value="Normal">Normal</option>
-                <option value="Server">Server</option>
+              <!-- Endpoint Type (Editable if Unlocked) -->
+              <select v-if="endpoint.isEditing" v-model="endpoint.type" @change="handleTypeChange(index)" class="editable-select">
+                <option value="Udp">UDP</option>
+                <option value="Uart">UART</option>
+                <option value="Tcp">TCP</option>
               </select>
+              <p v-else class="uppercase">{{ endpoint.type }}</p>
 
-              <label>Address</label>
-              <input type="text" v-model="endpoint.config.Address" :disabled="!endpoint.isEditing" />
+              <!-- Delete Button (Only visible when unlocked) -->
+              <button v-if="endpoint.isEditing" class="remove-button" @click="removeEndpoint(index)">
+                <i class="fas fa-trash"></i>
+              </button>
 
-              <label>Port</label>
-              <input type="number" v-model="endpoint.config.Port" :disabled="!endpoint.isEditing" />
+              <!-- Lock/Unlock Button -->
+              <button class="lock-button" @click="toggleEdit(index)">
+                <i :class="endpoint.isEditing ? 'fas fa-lock-open' : 'fas fa-lock'"></i>
+              </button>
             </div>
 
-            <!-- Uart Endpoint Options -->
-            <div v-if="endpoint.type === 'Uart'">
-              <label>Device</label>
-              <input type="text" v-model="endpoint.config.Device" :disabled="!endpoint.isEditing" />
+            <!-- Display endpoint options based on type -->
+            <div class="endpoint-details">
+              <!-- Udp Endpoint Options -->
+              <div v-if="endpoint.type === 'Udp'">
+                <label>Mode</label>
+                <select v-model="endpoint.config.Mode" :disabled="!endpoint.isEditing">
+                  <option value="Normal">Normal</option>
+                  <option value="Server">Server</option>
+                </select>
 
-              <label>Baud</label>
-              <input type="text" v-model="endpoint.config.Baud" :disabled="!endpoint.isEditing" />
+                <label>Address</label>
+                <input type="text" v-model="endpoint.config.Address" :disabled="!endpoint.isEditing" />
 
-              <label>FlowControl</label>
-              <select v-model="endpoint.config.FlowControl" :disabled="!endpoint.isEditing">
-                <option value="true">True</option>
-                <option value="false">False</option>
-              </select>
-            </div>
+                <label>Port</label>
+                <input type="number" v-model="endpoint.config.Port" :disabled="!endpoint.isEditing" />
+              </div>
 
-            <!-- Tcp Endpoint Options -->
-            <div v-if="endpoint.type === 'Tcp'">
-              <label>Address</label>
-              <input type="text" v-model="endpoint.config.Address" :disabled="!endpoint.isEditing" />
+              <!-- Uart Endpoint Options -->
+              <div v-if="endpoint.type === 'Uart'">
+                <label>Device</label>
+                <input type="text" v-model="endpoint.config.Device" :disabled="!endpoint.isEditing" />
 
-              <label>Port</label>
-              <input type="number" v-model="endpoint.config.Port" :disabled="!endpoint.isEditing" />
+                <label>Baud</label>
+                <input type="text" v-model="endpoint.config.Baud" :disabled="!endpoint.isEditing" />
 
-              <label>Retry Timeout</label>
-              <input type="number" v-model="endpoint.config.RetryTimeout" :disabled="!endpoint.isEditing" />
+                <label>FlowControl</label>
+                <select v-model="endpoint.config.FlowControl" :disabled="!endpoint.isEditing">
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+              </div>
+
+              <!-- Tcp Endpoint Options -->
+              <div v-if="endpoint.type === 'Tcp'">
+                <label>Address</label>
+                <input type="text" v-model="endpoint.config.Address" :disabled="!endpoint.isEditing" />
+
+                <label>Port</label>
+                <input type="number" v-model="endpoint.config.Port" :disabled="!endpoint.isEditing" />
+
+                <label>Retry Timeout</label>
+                <input type="number" v-model="endpoint.config.RetryTimeout" :disabled="!endpoint.isEditing" />
+              </div>
             </div>
           </div>
         </div>
+
+        <button class="add-button" @click="addEndpoint">Add Endpoint</button>
       </div>
 
-      <button class="add-button" @click="addEndpoint">Add Endpoint</button>
-
-      <div class="actions">
-        <button @click="saveConfig" class="save-button">Save Configuration</button>
-        <button @click="cancelConfig" class="cancel-button">Cancel</button>
+      <div class="actions-container">
+        <div class="actions">
+          <button @click="saveConfig" class="save-button">Save Configuration</button>
+          <button @click="cancelConfig" class="cancel-button">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -331,13 +335,24 @@ export default {
 
 .editor-container {
   background-color: var(--ark-color-white);
-  padding: 30px;
   border-radius: 12px;
   width: 700px;
   max-width: 90%;
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   max-height: 90vh;
+}
+
+.editor-content {
+  padding: 30px;
+  overflow-y: auto;
+}
+
+h1 {
+  text-align: center;
+  color: var(--ark-color-black);
+  margin-bottom: 25px;
 }
 
 .endpoint-row {
@@ -441,16 +456,26 @@ input, select {
   border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
+  margin-bottom: 20px;
 }
 
 .add-button:hover {
   background-color: var(--ark-color-blue-hover);
 }
 
+.actions-container {
+  background-color: var(--ark-color-white);
+  border-top: 1px solid var(--ark-color-black-shadow);
+  border-radius: 0 0 12px 12px;
+  padding: 20px 30px;
+  position: sticky;
+  bottom: 0;
+}
+
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 30px;
+  width: 100%;
 }
 
 .save-button,
@@ -483,5 +508,4 @@ input, select {
 .uppercase {
   text-transform: uppercase;
 }
-
 </style>

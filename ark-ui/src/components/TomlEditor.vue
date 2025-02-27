@@ -1,89 +1,118 @@
 <template>
   <div class="editor-backdrop">
     <div class="editor-container">
-      <h1>{{ serviceName }}</h1>
+      <div class="editor-content">
+        <h1>{{ serviceName }}</h1>
 
-      <div class="toml-editor">
-        <!-- Top-level primitive values first -->
-        <div v-for="(value, key) in topLevelPrimitives" :key="key" class="form-group">
-          <label :for="key">{{ formatKey(key) }}</label>
+        <div class="toml-editor">
+          <!-- Top-level primitive values first -->
+          <div v-for="(value, key) in topLevelPrimitives" :key="key" class="form-group">
+            <label :for="key">{{ formatKey(key) }}</label>
 
-          <!-- String input -->
-          <input
-            v-if="typeof value === 'string'"
-            type="text"
-            :id="key"
-            v-model="config[key]"
-            class="text-input"
-          />
-
-          <!-- Boolean input -->
-          <div v-else-if="typeof value === 'boolean'" class="checkbox-group">
+            <!-- String input -->
             <input
-              type="checkbox"
+              v-if="typeof value === 'string'"
+              type="text"
               :id="key"
               v-model="config[key]"
-              class="checkbox-input"
+              class="text-input"
+            />
+
+            <!-- Boolean input -->
+            <div v-else-if="typeof value === 'boolean'" class="checkbox-group">
+              <input
+                type="checkbox"
+                :id="key"
+                v-model="config[key]"
+                class="checkbox-input"
+              />
+            </div>
+
+            <!-- Number input -->
+            <input
+              v-else-if="typeof value === 'number'"
+              type="number"
+              :id="key"
+              v-model.number="config[key]"
+              class="number-input"
+              step="any"
             />
           </div>
 
-          <!-- Number input -->
-          <input
-            v-else-if="typeof value === 'number'"
-            type="number"
-            :id="key"
-            v-model.number="config[key]"
-            class="number-input"
-            step="any"
-          />
-        </div>
+          <!-- Then display each sub-table with a section header -->
+          <div v-for="(tableValue, tableKey) in subTables" :key="tableKey" class="subtable-section">
+            <div class="subtable-header">
+              {{ formatKey(tableKey) }}
+            </div>
 
-        <!-- Then display each sub-table with a section header -->
-        <div v-for="(tableValue, tableKey) in subTables" :key="tableKey" class="subtable-section">
-          <div class="subtable-header">
-            {{ formatKey(tableKey) }}
-          </div>
+            <div class="subtable-content">
+              <div
+                v-for="subKey in getNonOptionsKeys(tableValue)"
+                :key="`${tableKey}.${subKey}`"
+                class="form-group"
+              >
+                <label :for="`${tableKey}.${subKey}`">{{ formatKey(subKey) }}</label>
 
-          <div class="subtable-content">
-            <div v-for="(subValue, subKey) in tableValue" :key="`${tableKey}.${subKey}`" class="form-group">
-              <label :for="`${tableKey}.${subKey}`">{{ formatKey(subKey) }}</label>
-
-              <!-- String input -->
-              <input
-                v-if="typeof subValue === 'string'"
-                type="text"
-                :id="`${tableKey}.${subKey}`"
-                v-model="config[tableKey][subKey]"
-                class="text-input"
-              />
-
-              <!-- Boolean input -->
-              <div v-else-if="typeof subValue === 'boolean'" class="checkbox-group">
-                <input
-                  type="checkbox"
+                <!-- Dropdown using options array if available -->
+                <select
+                  v-if="hasOptionsArray(tableKey, subKey)"
                   :id="`${tableKey}.${subKey}`"
                   v-model="config[tableKey][subKey]"
-                  class="checkbox-input"
-                />
-              </div>
+                  class="select-input"
+                >
+                  <option
+                    v-for="option in getOptionsArray(tableKey, subKey)"
+                    :key="option"
+                    :value="option"
+                  >
+                    {{ option }}
+                  </option>
+                </select>
 
-              <!-- Number input -->
-              <input
-                v-else-if="typeof subValue === 'number'"
-                type="number"
-                :id="`${tableKey}.${subKey}`"
-                v-model.number="config[tableKey][subKey]"
-                class="number-input"
-                step="any"
-              />
+                <!-- String input -->
+                <input
+                  v-else-if="typeof tableValue[subKey] === 'string'"
+                  type="text"
+                  :id="`${tableKey}.${subKey}`"
+                  v-model="config[tableKey][subKey]"
+                  class="text-input"
+                />
+
+                <!-- Boolean input -->
+                <div v-else-if="typeof tableValue[subKey] === 'boolean'" class="checkbox-group">
+                  <input
+                    type="checkbox"
+                    :id="`${tableKey}.${subKey}`"
+                    v-model="config[tableKey][subKey]"
+                    class="checkbox-input"
+                  />
+                </div>
+
+                <!-- Number input -->
+                <input
+                  v-else-if="typeof tableValue[subKey] === 'number'"
+                  type="number"
+                  :id="`${tableKey}.${subKey}`"
+                  v-model.number="config[tableKey][subKey]"
+                  class="number-input"
+                  step="any"
+                />
+
+                <!-- Simple array display (read-only for now) -->
+                <div v-else-if="Array.isArray(tableValue[subKey])" class="array-display">
+                  {{ JSON.stringify(tableValue[subKey]) }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="actions">
-        <button @click="saveConfig" class="save-button">Save</button>
-        <button @click="cancelEdit" class="cancel-button">Cancel</button>
+      <div class="actions-container">
+        <div class="actions">
+          <button @click="saveConfig" class="save-button">Save</button>
+          <button @click="cancelEdit" class="cancel-button">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -135,6 +164,36 @@ export default {
   methods: {
     isObject(value) {
       return typeof value === 'object' && value !== null && !Array.isArray(value);
+    },
+
+    // Check if a field is an options array (ends with _options)
+    isOptionsField(key) {
+      return key.endsWith('_options');
+    },
+
+    // Get all keys that aren't options fields
+    getNonOptionsKeys(obj) {
+      return Object.keys(obj).filter(key => !this.isOptionsField(key));
+    },
+
+    // Get the base field name for an options field
+    getBaseFieldName(optionsKey) {
+      return optionsKey.replace('_options', '');
+    },
+
+    // Check if a field has a corresponding options array
+    hasOptionsArray(tableKey, fieldKey) {
+      const optionsKey = `${fieldKey}_options`;
+      return (
+        this.config[tableKey] &&
+        Array.isArray(this.config[tableKey][optionsKey])
+      );
+    },
+
+    // Get the options array for a field
+    getOptionsArray(tableKey, fieldKey) {
+      const optionsKey = `${fieldKey}_options`;
+      return this.config[tableKey][optionsKey] || [];
     },
 
     loadConfig() {
@@ -217,13 +276,18 @@ export default {
 
 .editor-container {
   background-color: var(--ark-color-white);
-  padding: 30px;
   border-radius: 12px;
   width: 600px;
   max-width: 90%;
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   max-height: 90vh;
+}
+
+.editor-content {
+  padding: 30px;
+  overflow-y: auto;
 }
 
 h1 {
@@ -248,7 +312,8 @@ h1 {
 }
 
 .text-input,
-.number-input {
+.number-input,
+.select-input {
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
@@ -256,6 +321,12 @@ h1 {
   border-radius: 6px;
   font-size: 16px;
   color: var(--ark-color-black);
+}
+
+.select-input {
+  background-color: var(--ark-color-white);
+  height: 42px;
+  cursor: pointer;
 }
 
 .number-input {
@@ -271,6 +342,15 @@ h1 {
 .checkbox-input {
   transform: scale(1.5);
   margin-right: 10px;
+}
+
+.array-display {
+  padding: 10px;
+  background-color: var(--ark-color-black-shadow);
+  border-radius: 6px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .subtable-section {
@@ -294,10 +374,19 @@ h1 {
   padding: 0 10px;
 }
 
+.actions-container {
+  background-color: var(--ark-color-white);
+  border-top: 1px solid var(--ark-color-black-shadow);
+  border-radius: 0 0 12px 12px;
+  padding: 20px 30px;
+  position: sticky;
+  bottom: 0;
+}
+
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 30px;
+  width: 100%;
 }
 
 .save-button,
