@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="page-section-container">
-      <h1>WiFi</h1>
+      <h1>Wifi</h1>
       <h2>{{ toggleStateStation ? 'Station' : 'Hotspot' }}</h2>
       <form @submit.prevent="createConnection">
         <div class="form-group">

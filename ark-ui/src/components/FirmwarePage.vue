@@ -4,7 +4,8 @@
     <div class="file-upload-wrapper" @dragover.prevent="dragOverHandler" @drop.prevent="dropHandler" @dragleave.prevent="dragLeaveHandler">
       <input type="file" @change="handleFileUpload" class="file-input"/>
       <button class="file-select-btn">Select File</button>
-      <p class="hint-text">{{ file ? `${file.name}` : 'Drag and drop a file or click "Select File"' }}</p>
+      <p class="hint-text">{{ file ? `${file.name}` : 'Drag and drop or click "Select File"\n' }}</p>
+      <p class="hint-text">{{ file ? `${file.name}` : '.apj or .px4' }}</p>
     </div>
     <progress v-if="isUploading" :value="progress" max="100"></progress>
     <p v-if="file">{{ statusMessage }}</p>
