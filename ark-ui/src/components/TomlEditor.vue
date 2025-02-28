@@ -133,7 +133,8 @@ export default {
   data() {
     return {
       config: {},
-      originalConfig: null
+      originalConfig: null,
+      originalTypes: {} // Map to store original types
     };
   },
   computed: {
@@ -196,6 +197,55 @@ export default {
       return this.config[tableKey][optionsKey] || [];
     },
 
+    // Store original types when config is loaded
+    storeOriginalTypes(obj, path = '') {
+      for (const key in obj) {
+        const fullPath = path ? `${path}.${key}` : key;
+        const value = obj[key];
+
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          this.storeOriginalTypes(value, fullPath);
+        } else {
+          this.originalTypes[fullPath] = typeof value;
+        }
+      }
+    },
+
+    // Validate that all fields still match their original types
+    validateTypes() {
+      const invalidFields = [];
+
+      const checkTypes = (obj, path = '') => {
+        for (const key in obj) {
+          const fullPath = path ? `${path}.${key}` : key;
+          const value = obj[key];
+
+          if (value && typeof value === 'object' && !Array.isArray(value)) {
+            checkTypes(value, fullPath);
+          } else if (this.originalTypes[fullPath]) {
+            const originalType = this.originalTypes[fullPath];
+            const currentType = typeof value;
+
+            if (originalType === 'number' && currentType !== 'number') {
+              // Check if it can be converted to a number
+              const numValue = Number(value);
+              if (isNaN(numValue)) {
+                invalidFields.push({
+                  path: fullPath,
+                  expectedType: originalType,
+                  currentType: currentType,
+                  value: value
+                });
+              }
+            }
+          }
+        }
+      };
+
+      checkTypes(this.config);
+      return invalidFields;
+    },
+
     loadConfig() {
       console.log(`Loading config for service: ${this.serviceName}`);
       axios
@@ -207,6 +257,11 @@ export default {
           if (status === 'success') {
             try {
               this.config = toml.parse(configData.trim());
+
+              // Store the original data types
+              this.originalTypes = {};
+              this.storeOriginalTypes(this.config);
+
               // Store original config for comparison or reset
               this.originalConfig = JSON.parse(JSON.stringify(this.config));
             } catch (error) {
@@ -223,7 +278,47 @@ export default {
 
     saveConfig() {
       try {
-        const tomlString = toml.dump(this.config);
+        // Validate types before saving
+        const invalidFields = this.validateTypes();
+
+        if (invalidFields.length > 0) {
+          // Format error message
+          const errorMessages = invalidFields.map(field => {
+            const fieldName = field.path.split('.').pop();
+            return `"${fieldName}" should be a number but contains "${field.value}"`;
+          });
+
+          alert(`Please fix the following issues before saving:\n\n${errorMessages.join('\n')}`);
+          return;
+        }
+
+        // All validations passed, prepare to save
+        const configToSave = JSON.parse(JSON.stringify(this.config));
+
+        // Convert numeric strings to actual numbers
+        const convertTypes = (obj) => {
+          for (const key in obj) {
+            const value = obj[key];
+
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+              convertTypes(value);
+            } else if (typeof value === 'string') {
+              // Check if this was originally a number
+              const fullPath = this.getFullPath(obj, key);
+              if (fullPath && this.originalTypes[fullPath] === 'number') {
+                const numValue = Number(value);
+                if (!isNaN(numValue)) {
+                  obj[key] = numValue;
+                }
+              }
+            }
+          }
+        };
+
+        // Convert any string values back to numbers where needed
+        convertTypes(configToSave);
+
+        const tomlString = toml.dump(configToSave);
 
         axios
           .post(`/api/service/config?serviceName=${this.serviceName}`, {
@@ -246,6 +341,33 @@ export default {
         console.error('Error converting to TOML:', error);
         alert('Error preparing configuration for saving');
       }
+    },
+
+    // Helper to get the full path of a nested property
+    getFullPath(obj, key) {
+      for (const path in this.originalTypes) {
+        const parts = path.split('.');
+        const lastPart = parts[parts.length - 1];
+
+        if (lastPart === key) {
+          // Check if this is actually the right object
+          let currentObj = this.config;
+          let found = true;
+
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (currentObj[parts[i]] === undefined) {
+              found = false;
+              break;
+            }
+            currentObj = currentObj[parts[i]];
+          }
+
+          if (found && currentObj === obj) {
+            return path;
+          }
+        }
+      }
+      return null;
     },
 
     cancelEdit() {
