@@ -1,35 +1,48 @@
 import axios from 'axios';
 
 // Base API URL - all requests go through nginx which handles the routing
-const API_URL = '/api';
+// const API_URL = '/api';
 
 // Define all API endpoints centrally
 const ENDPOINTS = {
+  // Test endpoints (for development debugging)
+  test: `/network/test`,
+  debugRoutes: `/network/debug/routes`,
+
   // Connection management
-  connections: `${API_URL}/network/connections`,
-  connectionById: (id) => `${API_URL}/network/connections/${id}`,
-  connectToNetwork: (id) => `${API_URL}/network/connections/${id}/connect`,
-  disconnectFromNetwork: (id) => `${API_URL}/network/connections/${id}/disconnect`,
+  connections: `/network/connections`,
+  connectionById: (id) => `/network/connections/${id}`,
+  connectToNetwork: (id) => `/network/connections/${id}/connect`,
+  disconnectFromNetwork: (id) => `/network/connections/${id}/disconnect`,
   
   // WiFi specific
-  wifiScan: `${API_URL}/network/wifi/scan`,
-  wifiConnect: `${API_URL}/network/wifi/connect`,
+  wifiScan: `/network/wifi/scan`,
+  wifiConnect: `/network/wifi/connect`,
   
   // Routing
-  routing: `${API_URL}/network/routing`,
+  routing: `/network/routing`,
   
   // Statistics endpoint removed
   
   // Hostname
-  hostname: `${API_URL}/network/hostname`,
+  hostname: `/network/hostname`,
   
   // LTE specific
-  lteStatus: `${API_URL}/network/lte/status`,
-  lteConnect: `${API_URL}/network/lte/connect`,
-  lteDisconnect: `${API_URL}/network/lte/disconnect`,
+  lteStatus: `/network/lte/status`,
+  lteConnect: `/network/lte/connect`,
+  lteDisconnect: `/network/lte/disconnect`,
 };
 
 export default {
+  // Test endpoints
+  async testApi() {
+    return axios.get(ENDPOINTS.test);
+  },
+
+  async getDebugRoutes() {
+    return axios.get(ENDPOINTS.debugRoutes);
+  },
+
   // Current connections
   async getConnections() {
     return axios.get(ENDPOINTS.connections);

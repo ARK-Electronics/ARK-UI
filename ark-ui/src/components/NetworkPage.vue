@@ -3,10 +3,12 @@
     <!-- Header -->
     <div class="header-container">
       <h1 class="page-title">Network Connections Manager</h1>
-      <button @click="handleRefresh" class="refresh-button">
-        <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
-        Refresh
-      </button>
+      <div>
+        <button @click="handleRefresh" class="refresh-button">
+          <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+          Refresh
+        </button>
+      </div>
     </div>
 
     <!-- Navigation Tabs -->
@@ -615,7 +617,6 @@
 </template>
 
 <script>
-import axios from 'axios';
 import ConnectionsService from '../services/ConnectionsService';
 
 export default {
@@ -749,7 +750,7 @@ export default {
   
   watch: {
     // Watch section changes (usage tab uses placeholder data)
-    activeSection(newValue) {
+    activeSection() {
       // Statistics functionality removed
     },
     
