@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import OverviewPage from '../components/OverviewPage.vue';
-import WifiPage from '../components/WifiPage.vue';
+import NetworkPage from '../components/NetworkPage.vue';
 import FirmwarePage from '../components/FirmwarePage.vue';
 
 const routes = [
@@ -11,8 +11,8 @@ const routes = [
   },
   {
     path: '/wifi-config',
-    name: 'WifiPage',
-    component: WifiPage
+    name: 'NetworkPage',
+    component: NetworkPage
   },
   {
     path: '/firmware-upload',

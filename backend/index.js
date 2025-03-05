@@ -201,51 +201,6 @@ app.get('/api/service/logs', async (req, res) => {
     console.error(`Error retrieving logs for ${serviceName}:`, error.message);
   }
 });
-//// NETWORK :: GET :: ACTIVE_CONN
-app.get('/api/network/active-connection', async (req, res) => {
-  console.log('/api/network/active-connection');
-  try {
-    const result = await execScript('network_active_connection_details.sh');
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send('Error retrieving active connection details');
-    console.error(`Error retrieving active connection details`);
-  }
-});
-//// NETWORK :: GET :: AP_CONN
-app.get('/api/network/ap-connection', async (req, res) => {
-  console.log('/api/network/ap-connection');
-  try {
-    const result = await execScript('network_ap_connection_details.sh');
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send('Error retrieving AP connection details');
-    console.error(`Error retrieving AP connection details`);
-  }
-});
-//// NETWORK :: POST :: CREATE_CONN
-app.post('/api/network/create-connection', async (req, res) => {
-  console.log('/api/network/create-connection');
-  const { ssid, password, mode } = req.body;
-  const script = mode === 'ap' ? 'network_create_ap_connection.sh' : 'network_create_infra_connection.sh';
-  try {
-    const result = await execScript(`${script}`, [ssid, password]);
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send('Error creating connection failed');
-    console.error(`Error creating connection failed`);
-  }
-});
-//// NETWORK :: POST :: HOSTNAME
-app.post('/api/network/change-hostname', async (req, res) => {
-  console.log('/api/network/change-hostname');
-  try {
-    await execScript(`network_change_hostname.sh`, [req.body.hostname]);
-  } catch (error) {
-    res.status(500).send('Error changing hostname failed');
-    console.error(`Error changing hostname failed`);
-  }
-});
 //// VEHICLE :: GET :: STATUSES
 app.get('/api/vehicle/autopilot-details', async (req, res) => {
   console.log('/api/vehicle/autopilot-details');
