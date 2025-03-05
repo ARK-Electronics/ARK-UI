@@ -1,58 +1,99 @@
 import axios from 'axios';
 
-const API_URL = '/api'; // Using relative path for ARK-UI
+// Base API URL - all requests go through nginx which handles the routing
+const API_URL = '/api';
+
+// Define all API endpoints centrally
+const ENDPOINTS = {
+  // Connection management
+  connections: `${API_URL}/network/connections`,
+  connectionById: (id) => `${API_URL}/network/connections/${id}`,
+  connectToNetwork: (id) => `${API_URL}/network/connections/${id}/connect`,
+  disconnectFromNetwork: (id) => `${API_URL}/network/connections/${id}/disconnect`,
+  
+  // WiFi specific
+  wifiScan: `${API_URL}/network/wifi/scan`,
+  wifiConnect: `${API_URL}/network/wifi/connect`,
+  
+  // Routing
+  routing: `${API_URL}/network/routing`,
+  
+  // Statistics endpoint removed
+  
+  // Hostname
+  hostname: `${API_URL}/network/hostname`,
+  
+  // LTE specific
+  lteStatus: `${API_URL}/network/lte/status`,
+  lteConnect: `${API_URL}/network/lte/connect`,
+  lteDisconnect: `${API_URL}/network/lte/disconnect`,
+};
 
 export default {
   // Current connections
-  async getCurrentConnections() {
-    return axios.get(`${API_URL}/connections`);
+  async getConnections() {
+    return axios.get(ENDPOINTS.connections);
   },
   
   async connectToNetwork(id) {
-    return axios.post(`${API_URL}/connections/${id}/connect`);
+    return axios.post(ENDPOINTS.connectToNetwork(id));
   },
   
   async disconnectFromNetwork(id) {
-    return axios.post(`${API_URL}/connections/${id}/disconnect`);
+    return axios.post(ENDPOINTS.disconnectFromNetwork(id));
   },
   
-  async configureConnection(id, config) {
-    return axios.put(`${API_URL}/connections/${id}`, config);
+  async createConnection(config) {
+    return axios.post(ENDPOINTS.connections, config);
+  },
+  
+  async updateConnection(id, config) {
+    return axios.put(ENDPOINTS.connectionById(id), config);
+  },
+  
+  async deleteConnection(id) {
+    return axios.delete(ENDPOINTS.connectionById(id));
   },
   
   // Available WiFi
   async scanWifiNetworks() {
-    return axios.get(`${API_URL}/wifi/scan`);
+    return axios.get(ENDPOINTS.wifiScan);
   },
   
   async connectToWifi(ssid, password = null) {
-    return axios.post(`${API_URL}/wifi/connect`, { ssid, password });
+    return axios.post(ENDPOINTS.wifiConnect, { ssid, password });
   },
   
   // Routing priorities
   async getRoutingPriorities() {
-    return axios.get(`${API_URL}/routing`);
+    return axios.get(ENDPOINTS.routing);
   },
   
   async updateRoutingPriorities(priorities) {
-    return axios.put(`${API_URL}/routing`, { priorities });
+    return axios.put(ENDPOINTS.routing, { priorities });
   },
   
-  // Data usage
-  async getDataUsage(timeframe = '1h') {
-    return axios.get(`${API_URL}/usage?timeframe=${timeframe}`);
+  // Statistics method removed
+  
+  // Hostname
+  async getHostname() {
+    return axios.get(ENDPOINTS.hostname);
+  },
+  
+  async setHostname(hostname) {
+    return axios.post(ENDPOINTS.hostname, { hostname });
   },
   
   // LTE specific
   async getLteStatus() {
-    return axios.get(`${API_URL}/lte/status`);
+    return axios.get(ENDPOINTS.lteStatus);
   },
   
   async connectLte(apn = null) {
-    return axios.post(`${API_URL}/lte/connect`, { apn });
+    return axios.post(ENDPOINTS.lteConnect, { apn });
   },
   
   async disconnectLte() {
-    return axios.post(`${API_URL}/lte/disconnect`);
+    return axios.post(ENDPOINTS.lteDisconnect);
   }
 };

@@ -730,6 +730,7 @@ export default {
           this.fetchRoutingPriorities();
           break;
         case 'usage':
+          // Usage tab shows placeholder data
           this.fetchUsageData();
           break;
         case 'lte':
@@ -747,15 +748,14 @@ export default {
   },
   
   watch: {
-    // When the active section changes, fetch data for that section
+    // Watch section changes (usage tab uses placeholder data)
     activeSection(newValue) {
-      if (newValue === 'usage') {
-        this.fetchUsageData();
-      }
+      // Statistics functionality removed
     },
     
-    // When timeframe changes, update usage data
+    // When timeframe changes, update usage data with placeholder values
     selectedTimeframe() {
+      // Statistics functionality removed
       this.fetchUsageData();
     }
   },
@@ -777,7 +777,8 @@ export default {
             await this.fetchRoutingPriorities();
             break;
           case 'usage':
-            await this.fetchUsageData();
+            // Statistics functionality removed
+            this.fetchUsageData();
             break;
           case 'lte':
             await this.fetchLteStatus();
@@ -793,7 +794,7 @@ export default {
     
     async fetchConnections() {
       try {
-        const response = await axios.get('/api/connections');
+        const response = await ConnectionsService.getConnections();
         this.connections = response.data;
       } catch (error) {
         console.error('Failed to fetch connections:', error);
@@ -803,7 +804,7 @@ export default {
     async scanWifi() {
       this.scanning = true;
       try {
-        const response = await axios.get('/api/wifi/scan');
+        const response = await ConnectionsService.scanWifiNetworks();
         this.availableWifiNetworks = response.data;
       } catch (error) {
         console.error('Failed to scan WiFi networks:', error);
@@ -814,7 +815,7 @@ export default {
     
     async fetchRoutingPriorities() {
       try {
-        const response = await axios.get('/api/routing');
+        const response = await ConnectionsService.getRoutingPriorities();
         this.routingPriorities = response.data;
         this.prioritiesChanged = false;
       } catch (error) {
@@ -823,12 +824,21 @@ export default {
     },
     
     async fetchUsageData() {
-      try {
-        const response = await axios.get(`/api/usage?timeframe=${this.selectedTimeframe}`);
-        this.usageData = response.data;
-      } catch (error) {
-        console.error('Failed to fetch usage data:', error);
-      }
+      // Statistics feature removed - provide sample placeholder data
+      this.usageData = [
+        {
+          name: 'Ethernet',
+          dataDown: 1.5,
+          dataUp: 0.5,
+          totalData: 2.0
+        },
+        {
+          name: 'WiFi',
+          dataDown: 0.8,
+          dataUp: 0.2,
+          totalData: 1.0
+        }
+      ];
     },
     
     // --- UI Actions ---
@@ -920,9 +930,9 @@ export default {
     async toggleConnection(connection) {
       try {
         if (connection.status === 'active') {
-          await axios.post(`/api/connections/${connection.id}/disconnect`);
+          await ConnectionsService.disconnectFromNetwork(connection.id);
         } else {
-          await axios.post(`/api/connections/${connection.id}/connect`);
+          await ConnectionsService.connectToNetwork(connection.id);
         }
         
         // Refresh connections
@@ -973,7 +983,7 @@ export default {
       }
       
       try {
-        await axios.delete(`/api/connections/${connection.id}`);
+        await ConnectionsService.deleteConnection(connection.id);
         await this.fetchConnections();
       } catch (error) {
         console.error('Failed to delete connection:', error);
@@ -1007,7 +1017,7 @@ export default {
     
     async connectToWifiNetwork(ssid, password = null) {
       try {
-        await axios.post('/api/wifi/connect', { ssid, password });
+        await ConnectionsService.connectToWifi(ssid, password);
         
         // Refresh connections and available networks
         await this.fetchConnections();
@@ -1053,7 +1063,7 @@ export default {
     
     async savePriorities() {
       try {
-        await axios.put('/api/routing', { priorities: this.routingPriorities });
+        await ConnectionsService.updateRoutingPriorities(this.routingPriorities);
         this.prioritiesChanged = false;
         
         // Refresh connections after changing priorities
@@ -1131,9 +1141,9 @@ export default {
         }
         
         if (this.isEditingConnection) {
-          await axios.put(`/api/connections/${payload.id}`, payload);
+          await ConnectionsService.updateConnection(payload.id, payload);
         } else {
-          await axios.post('/api/connections', payload);
+          await ConnectionsService.createConnection(payload);
         }
         
         // Close form and refresh data
