@@ -1,38 +1,23 @@
 <template>
   <div class="page-container">
     <!-- Header -->
-    <div class="header-container">
-      <h1 class="page-title">Network Connections Manager</h1>
-      <div>
-        <button @click="handleRefresh" class="refresh-button">
-          <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
-          Refresh
-        </button>
-      </div>
-    </div>
+    <h1 class="page-title">Network Connections Manager</h1>
 
     <!-- Navigation Tabs -->
-    <div class="tabs-container">
+    <div class="tabs-container" ref="tabsContainer">
       <button 
         class="tab-button"
         :class="{ 'active': activeSection === 'current' }"
         @click="activeSection = 'current'"
       >
-        Current Connections
-      </button>
-      <button 
-        class="tab-button"
-        :class="{ 'active': activeSection === 'available' }"
-        @click="activeSection = 'available'"
-      >
-        Available WiFi
+        Connections
       </button>
       <button 
         class="tab-button"
         :class="{ 'active': activeSection === 'priorities' }"
         @click="activeSection = 'priorities'"
       >
-        Routing Priorities
+        Routing
       </button>
       <button 
         class="tab-button"
@@ -51,14 +36,22 @@
       </button>
     </div>
 
-    <!-- Current Connections Section -->
-    <div v-if="activeSection === 'current'" class="section-container">
+    <!-- Tab Content Wrapper -->
+    <div class="tab-content-wrapper">
+      <!-- Connections Section -->
+      <div v-if="activeSection === 'current'" class="section-container">
       <div class="section-header">
-        <h2 class="section-title">Current Connections</h2>
-        <button @click="showAddConnectionForm" class="add-button">
-          <i class="fas fa-plus"></i>
-          Add Connection
-        </button>
+        <h2 class="section-title">Connections</h2>
+        <div class="header-actions">
+          <button @click="fetchConnections" class="refresh-button">
+            <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+            Refresh
+          </button>
+          <button @click="showAddConnectionForm" class="add-button">
+            <i class="fas fa-plus"></i>
+            Add Connection
+          </button>
+        </div>
       </div>
 
       <div class="table-container">
@@ -69,7 +62,6 @@
               <th>Type</th>
               <th>Status</th>
               <th>Signal</th>
-              <th>Data Rate</th>
               <th>IP Address</th>
               <th>Actions</th>
             </tr>
@@ -98,7 +90,6 @@
                 </div>
                 <span v-else class="wired-signal">Wired (100%)</span>
               </td>
-              <td>{{ connection.status === 'active' ? formatDataRate(connection.dataRate) : '-' }}</td>
               <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
               <td class="actions">
                 <button @click="configureConnection(connection)" class="icon-button configure">
@@ -117,7 +108,7 @@
               </td>
             </tr>
             <tr v-if="connections.length === 0">
-              <td colspan="7" class="empty-state">
+              <td colspan="6" class="empty-state">
                 <div class="empty-message">
                   <i class="fas fa-network-wired"></i>
                   <p>No connections found</p>
@@ -129,74 +120,26 @@
       </div>
     </div>
 
-    <!-- Available WiFi Section -->
-    <div v-if="activeSection === 'available'" class="section-container">
-      <div class="section-header">
-        <h2 class="section-title">Available WiFi Networks</h2>
-        <button @click="scanWifi" class="scan-button">
-          <i class="fas fa-sync-alt" :class="{ 'fa-spin': scanning }"></i>
-          Scan
-        </button>
-      </div>
-
-      <div class="wifi-networks-container">
-        <div v-if="scanning" class="scanning-overlay">
-          <div class="spinner"></div>
-          <p>Scanning for networks...</p>
-        </div>
-
-        <div 
-          v-for="network in availableWifiNetworks" 
-          :key="network.ssid"
-          class="wifi-network-item"
-          :class="{ 'connected': network.connected }"
-        >
-          <div class="wifi-info">
-            <i class="fas fa-wifi" :class="getSignalClass(network.signalStrength)"></i>
-            <div class="wifi-details">
-              <span class="wifi-name">{{ network.ssid }}</span>
-              <span v-if="network.secured" class="security-badge">Secured</span>
-            </div>
-          </div>
-          
-          <div class="wifi-signal">
-            <div class="signal-container">
-              <div class="signal-bar" :style="{ width: `${network.signalStrength}%` }" :class="getSignalClass(network.signalStrength)"></div>
-            </div>
-            <span class="signal-value">{{ network.signalStrength }}%</span>
-          </div>
-          
-          <button 
-            @click="connectToWifi(network)" 
-            class="wifi-connect-button"
-            :class="{ 'connected': network.connected }"
-          >
-            {{ network.connected ? 'Connected' : 'Connect' }}
-          </button>
-        </div>
-
-        <div v-if="availableWifiNetworks.length === 0 && !scanning" class="empty-state">
-          <div class="empty-message">
-            <i class="fas fa-wifi"></i>
-            <p>No WiFi networks found</p>
-            <button @click="scanWifi" class="scan-button-empty">Scan for Networks</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Available WiFi Section removed - integrated into connection form -->
 
     <!-- Routing Priorities Section -->
     <div v-if="activeSection === 'priorities'" class="section-container">
       <div class="section-header">
-        <h2 class="section-title">Connection Priorities</h2>
-        <button 
-          @click="savePriorities" 
-          class="save-button"
-          :disabled="!prioritiesChanged"
-        >
-          <i class="fas fa-save"></i>
-          Save Changes
-        </button>
+        <h2 class="section-title">Priorities</h2>
+        <div class="header-actions">
+          <button @click="fetchRoutingPriorities" class="refresh-button">
+            <i class="fas fa-sync-alt"></i>
+            Refresh
+          </button>
+          <button
+            @click="savePriorities"
+            class="save-button"
+            :disabled="!prioritiesChanged"
+          >
+            <i class="fas fa-save"></i>
+            Save Changes
+          </button>
+        </div>
       </div>
 
       <div class="priorities-container">
@@ -240,80 +183,130 @@
         </div>
       </div>
 
-      <div class="routing-info-panel">
-        <h3 class="info-title">Current Routing</h3>
-        <p v-if="activeRoute" class="info-content">
-          Internet traffic is currently routed through <strong>{{ activeRoute.name }}</strong> (Priority {{ activeRoute.priority }})
-        </p>
-        <p v-else class="info-content">No active route to the internet</p>
-      </div>
     </div>
 
     <!-- Data Usage Section -->
     <div v-if="activeSection === 'usage'" class="section-container">
       <div class="section-header">
         <h2 class="section-title">Data Usage</h2>
-        <div class="timeframe-selector">
-          <select v-model="selectedTimeframe" class="timeframe-dropdown">
-            <option value="1h">Last 1 hour</option>
-            <option value="24h">Last 24 hours</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-        </div>
+      </div>
+
+      <div v-if="socketError" class="error-message-small">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ socketError }}</p>
       </div>
 
       <div class="usage-container">
-        <div class="chart-container">
-          <div class="simple-chart">
-            <div v-for="(item, index) in usageData" :key="index" class="chart-bar-group">
-              <div class="chart-label">{{ item.name }}</div>
-              <div class="chart-bars">
-                <div class="chart-bar-container">
-                  <div class="chart-bar download" :style="{ width: `${(item.dataDown / maxDataRate) * 100}%` }"></div>
-                  <div class="chart-value">{{ item.dataDown }} Mbps</div>
-                </div>
-                <div class="chart-bar-container">
-                  <div class="chart-bar upload" :style="{ width: `${(item.dataUp / maxDataRate) * 100}%` }"></div>
-                  <div class="chart-value">{{ item.dataUp }} Mbps</div>
-                </div>
-              </div>
-            </div>
-            <div v-if="usageData.length === 0" class="chart-empty">
-              <span>No data available</span>
-            </div>
+        <div v-if="usageData.length === 0" class="empty-state">
+          <div class="empty-message">
+            <i class="fas fa-chart-bar"></i>
+            <p>Waiting for network data...</p>
           </div>
         </div>
 
         <div class="usage-details">
-          <div 
-            v-for="item in usageData" 
+          <div
+            v-for="(item, idx) in usageData"
             :key="item.name"
             class="usage-item"
+            :class="{ 'expanded': expandedInterfaces[idx] }"
+            @click="toggleInterface(idx)"
           >
+            <!-- Always visible header with basic info -->
             <div class="usage-item-header">
-              <span class="usage-name">{{ item.name }}</span>
-              <span class="usage-total">{{ (item.dataDown + item.dataUp).toFixed(1) }} Mbps total</span>
+              <div class="usage-info">
+                <span class="usage-name">{{ item.name }}</span>
+                <span class="usage-interface">({{ item.interface }})</span>
+                <span class="interface-type capitalize">{{ item.type }}</span>
+              </div>
+              <div class="usage-rates">
+                <span class="download-value">↓ {{ item.dataDown.toFixed(1) }}</span>
+                <span class="rate-separator">/</span>
+                <span class="upload-value">↑ {{ item.dataUp.toFixed(1) }}</span>
+                <span class="rate-unit">Mbps</span>
+                <i class="fas" :class="expandedInterfaces[idx] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              </div>
             </div>
 
-            <div class="usage-bars">
-              <div class="usage-bar-group">
-                <div class="usage-bar-label">
-                  <span>Download</span>
-                  <span class="download-value">{{ item.dataDown }} Mbps</span>
+            <!-- Basic rate bars - always visible -->
+            <div class="usage-bars-compact">
+              <div class="rate-bar-container">
+                <div class="rate-bar-fill download"
+                     :style="{ width: calculateBarWidth(item.dataDown) }"></div>
+              </div>
+              <div class="rate-bar-container">
+                <div class="rate-bar-fill upload"
+                     :style="{ width: calculateBarWidth(item.dataUp) }"></div>
+              </div>
+            </div>
+
+            <!-- Expanded details - only visible when expanded -->
+            <div v-if="expandedInterfaces[idx]" class="usage-details-expanded">
+              <!-- Connection details grid -->
+              <div class="usage-details-grid">
+                <div v-if="item.ipAddress" class="usage-detail-item">
+                  <span class="detail-label">IP Address:</span>
+                  <span class="detail-value">{{ item.ipAddress }}</span>
                 </div>
-                <div class="usage-bar-container">
-                  <div class="usage-bar download" :style="{ width: `${(item.dataDown / maxDataRate) * 100}%` }"></div>
+                <div v-if="item.type === 'wifi' && item.signalStrength" class="usage-detail-item">
+                  <span class="detail-label">Signal Strength:</span>
+                  <span class="detail-value">
+                    <div class="signal-container">
+                      <div class="signal-bar" :style="{ width: `${item.signalStrength}%` }" :class="getSignalClass(item.signalStrength)"></div>
+                    </div>
+                  </span>
+                </div>
+                <div v-if="item.active !== undefined" class="usage-detail-item">
+                  <span class="detail-label">Status:</span>
+                  <span class="detail-value" :class="item.active ? 'text-success' : ''">
+                    {{ item.active ? 'Active' : 'Inactive' }}
+                  </span>
                 </div>
               </div>
 
-              <div class="usage-bar-group">
-                <div class="usage-bar-label">
-                  <span>Upload</span>
-                  <span class="upload-value">{{ item.dataUp }} Mbps</span>
+              <!-- Transfer statistics -->
+              <div class="usage-statistics">
+                <div class="usage-stat-header">Transfer Statistics</div>
+                <div class="statistics-grid">
+                  <div class="stat-item">
+                    <div class="stat-label">Total Downloaded</div>
+                    <div class="stat-value download-value">{{ formatBytes(item.rxBytes) }}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">Total Uploaded</div>
+                    <div class="stat-value upload-value">{{ formatBytes(item.txBytes) }}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">RX Errors</div>
+                    <div class="stat-value">{{ item.rxErrors }}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">TX Errors</div>
+                    <div class="stat-value">{{ item.txErrors }}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">RX Dropped</div>
+                    <div class="stat-value">{{ item.rxDropped }}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">TX Dropped</div>
+                    <div class="stat-value">{{ item.txDropped }}</div>
+                  </div>
                 </div>
-                <div class="usage-bar-container">
-                  <div class="usage-bar upload" :style="{ width: `${(item.dataUp / maxDataRate) * 100}%` }"></div>
+              </div>
+
+              <!-- Packet statistics -->
+              <div class="usage-packet-stats">
+                <div class="usage-stat-header">Packet Statistics</div>
+                <div class="packet-stats-grid">
+                  <div class="stat-item">
+                    <div class="stat-label">RX Packets</div>
+                    <div class="stat-value">{{ item.rxPackets?.toLocaleString() || '0' }}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">TX Packets</div>
+                    <div class="stat-value">{{ item.txPackets?.toLocaleString() || '0' }}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -377,6 +370,52 @@
               </div>
             </div>
 
+            <!-- Available WiFi Networks Section (only for infrastructure mode) -->
+            <div v-if="newConnection.mode === 'infrastructure'" class="wifi-scan-container">
+              <div class="wifi-scan-header">
+                <h3>Available Networks</h3>
+                <button type="button" @click="scanWifiFromConnectionForm" class="wifi-scan-button">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': scanning }"></i>
+                  Rescan
+                </button>
+              </div>
+
+              <div class="wifi-networks-list">
+                <div v-if="scanning && availableWifiNetworks.length === 0" class="scanning-overlay">
+                  <div class="spinner"></div>
+                  <p>Scanning for networks...</p>
+                </div>
+
+                <div v-if="availableWifiNetworks.length === 0 && !scanning" class="empty-networks">
+                  <i class="fas fa-wifi"></i>
+                  <p>No WiFi networks found</p>
+                </div>
+
+                <div
+                  v-for="network in availableWifiNetworks"
+                  :key="network.ssid"
+                  class="wifi-network-item form-wifi-item"
+                  :class="{ 'selected': newConnection.ssid === network.ssid }"
+                  @click="selectWifiNetwork(network)"
+                >
+                  <div class="wifi-info">
+                    <i class="fas fa-wifi" :class="getSignalClass(network.signalStrength)"></i>
+                    <div class="wifi-details">
+                      <span class="wifi-name">{{ network.ssid }}</span>
+                      <span v-if="network.secured" class="security-badge">Secured</span>
+                    </div>
+                  </div>
+
+                  <div class="wifi-signal">
+                    <div class="signal-container">
+                      <div class="signal-bar" :style="{ width: `${network.signalStrength}%` }" :class="getSignalClass(network.signalStrength)"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual SSID input (for both modes) -->
             <div class="form-group">
               <label for="wifi-ssid">SSID:</label>
               <input type="text" id="wifi-ssid" v-model="newConnection.ssid" required>
@@ -389,7 +428,7 @@
                   :type="passwordVisible ? 'text' : 'password'" 
                   id="wifi-password" 
                   v-model="newConnection.password" 
-                  required
+                  :required="newConnection.mode === 'ap' || selectedNetworkSecured"
                 >
                 <button 
                   type="button" 
@@ -516,7 +555,7 @@
     <div v-if="activeSection === 'lte'" class="section-container">
       <div class="section-header">
         <h2 class="section-title">LTE Modem</h2>
-        <div class="header-buttons">
+        <div class="header-actions">
           <button @click="refreshLteStatus" class="refresh-button">
             <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingLte }"></i>
             Refresh
@@ -529,10 +568,56 @@
         <p>Loading LTE modem information...</p>
       </div>
 
-      <div v-else-if="lteStatus.status === 'not_found'" class="empty-state">
+      <div v-else-if="lteStatus.status === 'not_found'" class="empty-state with-fake-data">
         <div class="empty-message">
           <i class="fas fa-broadcast-tower"></i>
           <p>No LTE modem detected</p>
+          <p class="note">Showing example data for display purposes</p>
+        </div>
+
+        <!-- Example data for display purposes -->
+        <div class="lte-info-grid">
+          <div class="lte-info-card">
+            <div class="info-label">Model</div>
+            <div class="info-value">Quectel EP06-E</div>
+          </div>
+          <div class="lte-info-card">
+            <div class="info-label">Operator</div>
+            <div class="info-value">AT&T</div>
+          </div>
+          <div class="lte-info-card">
+            <div class="info-label">State</div>
+            <div class="info-value text-success">Connected</div>
+          </div>
+          <div class="lte-info-card">
+            <div class="info-label">Signal</div>
+            <div class="info-value">
+              <div class="signal-container">
+                <div class="signal-bar signal-strong" style="width: 75%"></div>
+              </div>
+              <span>-65 dBm</span>
+            </div>
+          </div>
+          <div class="lte-info-card">
+            <div class="info-label">APN</div>
+            <div class="info-value">phone</div>
+          </div>
+          <div class="lte-info-card">
+            <div class="info-label">IP Address</div>
+            <div class="info-value">100.12.45.78</div>
+          </div>
+        </div>
+
+        <div class="lte-actions-container">
+          <div class="lte-connected-info">
+            <div class="connected-message">
+              <i class="fas fa-check-circle"></i>
+              <p>Connected to LTE network via APN: <strong>phone</strong></p>
+            </div>
+            <button class="disconnect-button">
+              Disconnect
+            </button>
+          </div>
         </div>
       </div>
 
@@ -545,53 +630,58 @@
         <div class="lte-info-grid">
           <div class="lte-info-card">
             <div class="info-label">Model</div>
-            <div class="info-value">{{ lteStatus.model }}</div>
+            <div class="info-value">{{ lteStatus.model || '--' }}</div>
           </div>
           <div class="lte-info-card">
             <div class="info-label">Operator</div>
-            <div class="info-value">{{ lteStatus.operator }}</div>
+            <div class="info-value">{{ lteStatus.operator || '--' }}</div>
           </div>
           <div class="lte-info-card">
             <div class="info-label">State</div>
             <div class="info-value" :class="lteStatus.connected ? 'text-success' : ''">
-              {{ lteStatus.state }}
+              {{ lteStatus.state || '--' }}
             </div>
           </div>
           <div class="lte-info-card">
             <div class="info-label">Signal</div>
             <div class="info-value">
-              <div class="signal-container">
-                <div class="signal-bar" :style="{ width: `${lteStatus.signal}%` }" :class="getSignalClass(lteStatus.signal)"></div>
-              </div>
-              <span>{{ lteStatus.signal }}%</span>
+              <template v-if="lteStatus.signal !== undefined && lteStatus.signal !== null">
+                <div class="signal-container">
+                  <div
+                    class="signal-bar"
+                    :style="{ width: `${lteStatus.signal}%` }"
+                    :class="getSignalClass(lteStatus.signal)"
+                  ></div>
+                </div>
+                <span>{{ (lteStatus.rssi || lteStatus.signal) + ' dBm' }}</span>
+              </template>
+              <span v-else>--</span>
             </div>
           </div>
           <div class="lte-info-card">
             <div class="info-label">APN</div>
-            <div class="info-value">{{ lteStatus.apn || 'Not set' }}</div>
+            <div class="info-value">{{ lteStatus.apn || '--' }}</div>
           </div>
           <div class="lte-info-card">
             <div class="info-label">IP Address</div>
-            <div class="info-value">{{ lteStatus.ip_address || 'Not available' }}</div>
+            <div class="info-value">{{ lteStatus.ip_address || '--' }}</div>
           </div>
         </div>
 
-        <div class="lte-connection-panel">
-          <h3 class="panel-title">LTE Connection</h3>
-          
+        <div class="lte-actions-container">
           <div v-if="!lteStatus.connected" class="lte-connect-form">
-            <div class="form-group">
+            <div class="form-group apn-form-group">
               <label for="lte-apn">APN:</label>
               <div class="apn-input-container">
-                <input type="text" id="lte-apn" v-model="lteApn" 
+                <input type="text" id="lte-apn" v-model="lteApn" class="wide-input"
                   :placeholder="lteStatus.detectedApn ? 
-                    `Auto-detected: ${lteStatus.detectedApn}` : 
-                    'Enter APN (e.g. fast.t-mobile.com)'">
-                <div v-if="lteStatus.detectedApn" class="detected-apn-info">
-                  <i class="fas fa-info-circle"></i>
-                  <span>APN detected from carrier: {{ lteStatus.operator }}</span>
-                </div>
+                    `${lteStatus.detectedApn}` :
+                    'Enter APN'">
               </div>
+            </div>
+            <div v-if="lteStatus.detectedApn" class="detected-apn-info">
+              <i class="fas fa-info-circle"></i>
+              <span>APN detected from carrier: {{ lteStatus.operator }}</span>
             </div>
             <button 
               @click="connectLte" 
@@ -613,11 +703,16 @@
         </div>
       </div>
     </div>
+    </div> <!-- Close tab-content-wrapper -->
   </div>
 </template>
 
 <script>
 import ConnectionsService from '../services/ConnectionsService';
+// Try Socket.IO client import differently - include version in debug log
+console.log('Socket.IO client importing...');
+import io from 'socket.io-client';
+console.log('Socket.IO client imported, version:', io?.version || 'unknown');
 
 export default {
   data() {
@@ -628,15 +723,21 @@ export default {
       connections: [],
       availableWifiNetworks: [],
       routingPriorities: [],
-      usageData: [],
-      selectedTimeframe: '1h',
       prioritiesChanged: false,
+
+      // Network usage data
+      usageData: [],
+      expandedInterfaces: [],  // Track expanded/collapsed state of each interface
+      socketError: null,
+      socket: null,
+      refreshingUsage: false,
       
       // Connection form
       showConnectionForm: false,
       connectionType: null,
       isEditingConnection: false,
       passwordVisible: false,
+      selectedNetworkSecured: false,
       
       // WiFi password dialog
       showWifiPasswordDialog: false,
@@ -681,12 +782,13 @@ export default {
       
       // Refresh intervals
       dataRefreshInterval: null,
+      wifiScanInterval: null,
+      lastScanAnimation: 0,
       
       // UI states
       loadingConnections: false,
       loadingWifi: false,
-      loadingRouting: false,
-      loadingUsage: false
+      loadingRouting: false
     };
   },
   
@@ -714,91 +816,108 @@ export default {
     // Initial data fetch
     await this.fetchAll();
     
-    // Set up automatic refresh every 10 seconds
-    this.dataRefreshInterval = setInterval(this.fetchAll, 10000);
-    
-    // Add event listener for section changes
-    this.$watch('activeSection', (newSection) => {
-      // Load data based on the active section
-      switch (newSection) {
-        case 'current':
-          this.fetchConnections();
-          break;
-        case 'available':
-          this.scanWifi();
-          break;
-        case 'priorities':
-          this.fetchRoutingPriorities();
-          break;
-        case 'usage':
-          // Usage tab shows placeholder data
-          this.fetchUsageData();
-          break;
-        case 'lte':
-          this.fetchLteStatus();
-          break;
+    // Set up automatic refresh only for active tab data
+    this.dataRefreshInterval = setInterval(() => {
+      // Only refresh the current active section data
+      if (this.activeSection !== 'usage') {
+        this.fetchSectionData(this.activeSection, false);
       }
-    });
+    }, 15000);
+
+    // Only scan for WiFi when in the connection form with WiFi selected
+    this.wifiScanInterval = setInterval(() => {
+      if (this.showConnectionForm && this.connectionType === 'wifi') {
+        this.backgroundScanWifi();
+      }
+    }, 5000);
+
+    // Connect to socket if starting on usage tab
+    if (this.activeSection === 'usage') {
+      this.connectUsageSocket();
+    }
   },
   
   beforeUnmount() {
-    // Clean up intervals when component is destroyed
+    // Clean up all resources when component is destroyed
     if (this.dataRefreshInterval) {
       clearInterval(this.dataRefreshInterval);
     }
-  },
-  
-  watch: {
-    // Watch section changes (usage tab uses placeholder data)
-    activeSection() {
-      // Statistics functionality removed
-    },
-    
-    // When timeframe changes, update usage data with placeholder values
-    selectedTimeframe() {
-      // Statistics functionality removed
-      this.fetchUsageData();
+
+    if (this.wifiScanInterval) {
+      clearInterval(this.wifiScanInterval);
     }
+
+    // Make sure socket is disconnected
+    this.disconnectUsageSocket();
+  },
+
+  watch: {
+    // Watch section changes for socket connections
+    activeSection(newSection, oldSection) {
+      if (newSection === 'usage') {
+        // Connect socket when viewing usage tab
+        this.socketError = null;  // Clear any previous errors
+        this.connectUsageSocket();
+      } else if (oldSection === 'usage') {
+        // Disconnect socket when leaving usage tab
+        this.disconnectUsageSocket();
+        this.socketError = null;  // Clear errors when leaving tab
+      }
+
+      // Fetch the data for the new active section
+      this.fetchSectionData(newSection, true);
+    },
   },
   
   methods: {
     // --- Data Fetching ---
     
+    // Helper method to fetch only data needed for current section
+    fetchSectionData(section, showLoading = false) {
+      switch (section) {
+        case 'current':
+          this.fetchConnections(showLoading);
+          break;
+        case 'priorities':
+          this.fetchRoutingPriorities(showLoading);
+          break;
+        case 'usage':
+          // For usage tab, we only need to connect to WebSocket
+          // No REST API call needed - data comes via WebSocket
+          break;
+        case 'lte':
+          this.fetchLteStatus(showLoading);
+          break;
+      }
+    },
+
     async fetchAll() {
       try {
         // Load data for the active section only to improve performance
-        switch (this.activeSection) {
-          case 'current':
-            await this.fetchConnections();
-            break;
-          case 'available':
-            await this.scanWifi();
-            break;
-          case 'priorities':
-            await this.fetchRoutingPriorities();
-            break;
-          case 'usage':
-            // Statistics functionality removed
-            this.fetchUsageData();
-            break;
-          case 'lte':
-            await this.fetchLteStatus();
-            break;
-          default:
-            // Fallback to loading connections data
-            await this.fetchConnections();
-        }
+        // Use true for showLoading to ensure loading indicators are displayed
+        this.fetchSectionData(this.activeSection, true);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     },
     
-    async fetchConnections() {
+    async fetchConnections(showLoading = true) {
+      if (showLoading) {
+        this.loadingConnections = true;
+      }
+
       try {
         const response = await ConnectionsService.getConnections();
+
+        // Simply replace the array with new data
+        // This is simpler and less error-prone than partial updates
         this.connections = response.data;
       } catch (error) {
         console.error('Failed to fetch connections:', error);
+      } finally {
+        if (showLoading) {
+          this.loadingConnections = false;
+        }
       }
     },
     
@@ -806,42 +925,309 @@ export default {
       this.scanning = true;
       try {
         const response = await ConnectionsService.scanWifiNetworks();
-        this.availableWifiNetworks = response.data;
+        // Filter out hidden networks (those with -- as the name)
+        this.availableWifiNetworks = response.data.filter(network => network.ssid !== '--');
       } catch (error) {
         console.error('Failed to scan WiFi networks:', error);
       } finally {
         this.scanning = false;
+        this.lastScanAnimation = Date.now();
+      }
+    },
+
+    // Run WiFi scan in the background without animation
+    async backgroundScanWifi() {
+      // If we're not in the connection form or the form is not showing WiFi,
+      // skip the scan to save resources
+      if (!this.showConnectionForm || this.connectionType !== 'wifi' || this.newConnection.mode !== 'infrastructure') {
+        return;
+      }
+
+      // Don't show animation if we recently scanned (less than 10 seconds ago)
+      const showAnimation = Date.now() - this.lastScanAnimation > 10000 && this.availableWifiNetworks.length === 0;
+
+      if (showAnimation) {
+        this.scanning = true;
+      }
+
+      try {
+        const response = await ConnectionsService.scanWifiNetworks();
+        // Filter out hidden networks (those with -- as the name)
+        this.availableWifiNetworks = response.data.filter(network => network.ssid !== '--');
+      } catch (error) {
+        console.error('Failed to scan WiFi networks in background:', error);
+      } finally {
+        if (showAnimation) {
+          this.scanning = false;
+          this.lastScanAnimation = Date.now();
+        }
+      }
+    },
+
+    // Explicitly trigger a WiFi scan from the connection form
+    async scanWifiFromConnectionForm() {
+      // Always show animation when explicitly requested
+      this.scanning = true;
+
+      try {
+        const response = await ConnectionsService.scanWifiNetworks();
+        // Filter out hidden networks (those with -- as the name)
+        this.availableWifiNetworks = response.data.filter(network => network.ssid !== '--');
+      } catch (error) {
+        console.error('Failed to scan WiFi networks:', error);
+      } finally {
+        this.scanning = false;
+        this.lastScanAnimation = Date.now();
       }
     },
     
-    async fetchRoutingPriorities() {
+    // Select a WiFi network from the scan list
+    selectWifiNetwork(network) {
+      this.newConnection.ssid = network.ssid;
+      this.selectedNetworkSecured = network.secured;
+
+      // If the network is secured, focus the password field
+      if (network.secured) {
+        this.$nextTick(() => {
+          document.getElementById('wifi-password').focus();
+        });
+      }
+    },
+
+    async fetchRoutingPriorities(showLoading = true) {
+      if (showLoading) {
+        this.loadingRouting = true;
+      }
+
       try {
         const response = await ConnectionsService.getRoutingPriorities();
-        this.routingPriorities = response.data;
+
+        // Only replace the array if there are actual changes
+        const currentJSON = JSON.stringify(this.routingPriorities);
+        const newJSON = JSON.stringify(response.data);
+
+        if (currentJSON !== newJSON) {
+          this.routingPriorities = response.data;
+        }
+
         this.prioritiesChanged = false;
       } catch (error) {
         console.error('Failed to fetch routing priorities:', error);
+      } finally {
+        if (showLoading) {
+          this.loadingRouting = false;
+        }
       }
     },
     
-    async fetchUsageData() {
-      // Statistics feature removed - provide sample placeholder data
-      this.usageData = [
-        {
-          name: 'Ethernet',
-          dataDown: 1.5,
-          dataUp: 0.5,
-          totalData: 2.0
-        },
-        {
-          name: 'WiFi',
-          dataDown: 0.8,
-          dataUp: 0.2,
-          totalData: 1.0
+    connectUsageSocket() {
+      try {
+        // Close existing connection if any
+        this.disconnectUsageSocket();
+
+        this.socket = io(process.env.VUE_APP_NETWORK_SOCKET_URL, {
+          path: process.env.VUE_APP_NETWORK_SOCKET_PATH,
+          transports: ['websocket', 'polling'],
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000
+        });
+
+        // Handle connection events
+        this.socket.on('connect', () => {
+          console.log('Network stats Socket.IO connection established!', this.socket.id);
+
+          // Clear any previous error
+          this.socketError = null;
+        });
+
+        // Handle real-time data updates
+        this.socket.on('network_stats_update', (data) => {
+          console.log(`Received network stats update with ${data ? data.length : 0} interfaces`);
+
+          if (!data || !Array.isArray(data)) {
+            console.error('Invalid network stats data format:', data);
+            return;
+          }
+
+          // Process the data directly
+          this.processNetworkStatsData(data);
+        });
+
+        // Handle connection errors
+        this.socket.on('connect_error', (error) => {
+          console.error('Socket connection error:', error);
+          this.socketError = `Connection error: ${error.message}`;
+        });
+
+        this.socket.on('disconnect', (reason) => {
+          console.log('Socket disconnected:', reason);
+          if (this.activeSection === 'usage') {
+            this.socketError = `WebSocket disconnected. Reconnecting...`;
+          }
+        });
+      } catch (error) {
+        console.error('Error in connectUsageSocket:', error);
+        this.socketError = `WebSocket error: ${error.message}`;
+      }
+    },
+
+    disconnectUsageSocket() {
+      if (this.socket) {
+        console.log('Disconnecting from network stats socket:', this.socket.id);
+
+        // Remove all event listeners to prevent memory leaks
+        this.socket.off('connect');
+        this.socket.off('disconnect');
+        this.socket.off('connect_error');
+        this.socket.off('network_stats_update');
+
+        // Disconnect the socket
+        this.socket.disconnect();
+
+        // Clear the reference
+        this.socket = null;
+        console.log('Socket disconnected and reference cleared');
+      }
+    },
+
+    processNetworkStatsData(data) {
+      if (!data || !Array.isArray(data)) {
+        console.error('Invalid network stats data format:', data);
+        return;
+      }
+
+      console.log(`Processing: ${data.length} interfaces`);
+
+      try {
+        // Create arrays to hold the processed data
+        const processedData = [];
+
+        // Process each interface
+        for (let i = 0; i < data.length; i++) {
+          const networkInterface = data[i];
+
+          // Skip invalid entries
+          if (!networkInterface || !networkInterface.interface) {
+            console.warn(`Skipping invalid interface data at index ${i}`);
+            continue;
+          }
+
+          // Process the values
+          const downRate = parseFloat(networkInterface.current_rx_rate_mbps) || 0;
+          const upRate = parseFloat(networkInterface.current_tx_rate_mbps) || 0;
+
+          // Create the processed interface object
+          const processedInterface = {
+            name: networkInterface.name || networkInterface.interface || 'Unknown',
+            interface: networkInterface.interface,
+            type: networkInterface.type || 'unknown',
+            
+            // Connection status from server
+            active: networkInterface.active || false,  // Use explicit active flag from server
+            state: networkInterface.state || '',       // Raw state from server
+            
+            // Data rates
+            dataDown: parseFloat(downRate.toFixed(2)),
+            dataUp: parseFloat(upRate.toFixed(2)),
+            totalData: parseFloat((downRate + upRate).toFixed(2)),
+            
+            // Network stats
+            rxBytes: parseInt(networkInterface.rx_bytes) || 0,
+            txBytes: parseInt(networkInterface.tx_bytes) || 0,
+            ipAddress: networkInterface.ip_address || '',
+            signalStrength: parseInt(networkInterface.signal_strength) || 0,
+
+            // Error and packet stats
+            rxErrors: parseInt(networkInterface.rxErrors) || 0,
+            rxDropped: parseInt(networkInterface.rxDropped) || 0,
+            txErrors: parseInt(networkInterface.txErrors) || 0,
+            txDropped: parseInt(networkInterface.txDropped) || 0,
+            rxPackets: parseInt(networkInterface.rxPackets) || 0,
+            txPackets: parseInt(networkInterface.txPackets) || 0
+          };
+
+          processedData.push(processedInterface);
         }
-      ];
+
+        // Initialize expanded state array if needed
+        if (this.expandedInterfaces.length !== processedData.length) {
+          // Keep existing expanded states when possible
+          const newExpandedState = new Array(processedData.length).fill(false);
+          
+          // Preserve expanded state for interfaces that remain
+          if (this.usageData.length > 0) {
+            processedData.forEach((newInterface, index) => {
+              // Look for this interface in previous data to preserve expand state
+              const existingIndex = this.usageData.findIndex(
+                oldInterface => oldInterface.interface === newInterface.interface
+              );
+              if (existingIndex >= 0 && existingIndex < this.expandedInterfaces.length) {
+                newExpandedState[index] = this.expandedInterfaces[existingIndex];
+              }
+            });
+          }
+          
+          this.expandedInterfaces = newExpandedState;
+        }
+
+        // Data is already sorted by the server (active first, then by bytes)
+        this.usageData = processedData;
+
+        console.log(`Updated UI: usageData now has ${this.usageData.length} interfaces`);
+        if (this.usageData.length > 0) {
+          console.log(`First UI item: ${this.usageData[0].name}, Active: ${this.usageData[0].active}, Down: ${this.usageData[0].dataDown}, Up: ${this.usageData[0].dataUp}`);
+        }
+      } catch (error) {
+        console.error('Error processing network data:', error);
+      }
     },
     
+    // Toggle expanded/collapsed state of an interface
+    toggleInterface(index) {
+      if (index >= 0 && index < this.expandedInterfaces.length) {
+        // In Vue 3, reactive arrays can be directly modified
+        const newExpandedInterfaces = [...this.expandedInterfaces];
+        newExpandedInterfaces[index] = !newExpandedInterfaces[index];
+        this.expandedInterfaces = newExpandedInterfaces;
+      }
+    },
+
+    // No longer needed - using 'active' flag directly from server
+    // Method removed as we now use the 'active' status sent by the server
+
+    calculateBarWidth(rate) {
+      // For zero values, show empty bar
+      if (rate <= 0) return '0%';
+
+      // Define max scale for 100% width (10Mbps is full width)
+      const MAX_RATE = 10;
+
+      // Calculate percentage with cap at 100%
+      const percentage = Math.min(100, (rate / MAX_RATE) * 100);
+
+      return `${percentage}%`;
+    },
+
+    // Format bytes to human-readable format
+    formatBytes(bytes, decimals = 2) {
+      if (bytes === 0) return '0 Bytes';
+
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    },
+
+    getSignalClass(strength) {
+      if (strength === undefined || strength === null) return '';
+      if (strength >= 70) return 'signal-strong';
+      if (strength >= 40) return 'signal-medium';
+      return 'signal-weak';
+    },
+
     // --- UI Actions ---
     
     async handleRefresh() {
@@ -852,10 +1238,16 @@ export default {
     
     // --- LTE Management ---
     
-    async fetchLteStatus() {
-      this.loadingLte = true;
+    async fetchLteStatus(showLoading = true) {
+      if (showLoading) {
+        this.loadingLte = true;
+      }
+
       try {
         const response = await ConnectionsService.getLteStatus();
+
+        // In Vue 2, we should use Vue.set for reactivity, but for simplicity
+        // let's just replace the whole object which works fine
         this.lteStatus = response.data;
         
         // Update APN field with current or detected value
@@ -867,24 +1259,14 @@ export default {
           this.lteDetectedCarrier = response.data.operator;
         }
         
-        // Hide the LTE tab if not available
-        if (response.data.status === 'not_available') {
-          // Hide LTE tab
-          const lteTab = document.querySelector('.tab-button[data-tab="lte"]');
-          if (lteTab) {
-            lteTab.style.display = 'none';
-          }
-          
-          // Switch to another tab if currently on LTE tab
-          if (this.activeSection === 'lte') {
-            this.activeSection = 'current';
-          }
-        }
+        // Always show LTE tab regardless of detection status
       } catch (error) {
         console.error('Failed to fetch LTE status:', error);
         this.lteStatus = { status: 'error', message: error.message || 'Failed to fetch LTE status' };
       } finally {
-        this.loadingLte = false;
+        if (showLoading) {
+          this.loadingLte = false;
+        }
       }
     },
     
@@ -1082,6 +1464,7 @@ export default {
       this.connectionType = null;
       this.isEditingConnection = false;
       this.resetNewConnection();
+      this.selectedNetworkSecured = false;
     },
     
     selectConnectionType(type) {
@@ -1092,6 +1475,8 @@ export default {
       // Set default values based on connection type
       if (type === 'wifi') {
         this.newConnection.mode = 'infrastructure';
+        // Trigger a scan immediately when selecting WiFi type
+        this.scanWifiFromConnectionForm();
       } else if (type === 'lte') {
         this.newConnection.name = 'LTE Connection';
       } else if (type === 'ethernet') {
@@ -1181,13 +1566,7 @@ export default {
       
       return '<i class="fas fa-question-circle connection-icon unknown"></i>';
     },
-    
-    getSignalClass(strength) {
-      if (strength >= 70) return 'signal-strong';
-      if (strength >= 40) return 'signal-medium';
-      return 'signal-weak';
-    },
-    
+
     formatDataRate(rate) {
       if (!rate) return '0 Kbps';
       
@@ -1223,34 +1602,84 @@ export default {
 .page-container {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
   max-width: 1200px;
+  min-width: 800px; /* Prevent getting too narrow */
   margin: 0 auto;
   padding: 20px;
   gap: 20px;
+  position: relative;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  height: 100%;
 }
 
-.header-container, .header-buttons {
+/* Add a container for the tabs to ensure consistent width */
+.tab-content-wrapper {
+  width: 100%;
+  min-width: 100%; /* Prevent shrinking */
+  min-height: 500px;
+  height: calc(100vh - 150px); /* Account for header, tabs, and padding */
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Ensure all section containers have a proper width */
+.section-container {
+  width: 100%;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 8px var(--ark-color-black-shadow);
   background-color: var(--ark-color-white);
   border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px var(--ark-color-black-shadow);
+  padding: 20px;
+  box-sizing: border-box;
+  min-height: 500px; 
+  max-height: calc(100vh - 150px); /* Account for header, tabs and padding */
+  height: calc(100vh - 150px);
+  overflow-y: auto;  /* Enable vertical scrolling */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 100%; /* Ensure consistent width */
+  max-width: 100%; /* Prevent expanding beyond container */
 }
 
-.header-buttons {
+/* Add smooth transitions for data updates */
+.table-container,
+.connections-table tbody tr,
+.lte-info-card,
+.priority-item,
+.usage-item {
+  transition: all 0.2s ease;
+}
+
+.empty-chart {
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+  color: var(--ark-color-black);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.header-actions {
+  display: flex;
   background: none;
   padding: 0;
-  box-shadow: none;
   gap: 10px;
+  align-items: center;
 }
 
 .page-title {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
-  color: var(--ark-color-black-bold);
-  margin: 0;
+  color: var(--ark-color-black);
+  margin: 0 0 16px 0;
+  text-align: center;
 }
 
 .refresh-button, .test-mode-button {
@@ -1283,24 +1712,41 @@ export default {
 
 /* Tabs */
 .tabs-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Fixed 4 equal columns */
   gap: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   background-color: var(--ark-color-white);
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 2px 4px var(--ark-color-black-shadow);
+  padding: 8px 0;
+  box-sizing: border-box;
+  /* Fixed min-width to prevent resizing */
+  min-width: 100%;
 }
 
 .tab-button {
-  flex: 1;
-  padding: 10px;
-  background-color: transparent;
+  padding: 12px;
+  background-color: var(--ark-color-white);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   color: var(--ark-color-black);
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color 0.2s, color 0.2s; /* Only transition color and background */
   cursor: pointer;
+  box-shadow: 0 2px 4px var(--ark-color-black-shadow);
+  white-space: nowrap; /* Prevent text wrapping which causes size changes */
+  text-overflow: ellipsis; /* Handle overflow text */
+  overflow: hidden;
+  text-align: center;
+  box-sizing: border-box;
+  height: 44px; /* Fixed height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%; /* Take full width of grid cell */
 }
 
 .tab-button:hover {
@@ -1312,25 +1758,21 @@ export default {
   color: var(--ark-color-white);
 }
 
-/* Section Containers */
-.section-container {
-  background-color: var(--ark-color-white);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px var(--ark-color-black-shadow);
-}
+/* Remove duplicate section-container rule */
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ark-color-black-shadow);
 }
 
 .section-title {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  color: var(--ark-color-black-bold);
+  color: var(--ark-color-black);
   margin: 0;
 }
 
@@ -1360,8 +1802,35 @@ export default {
 /* Tables */
 .table-container {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 400px;
   border-radius: 4px;
   border: 1px solid var(--ark-color-black-shadow);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ark-color-black-shadow) transparent;
+}
+
+.table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background-color: var(--ark-color-black-shadow);
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ark-color-black);
+}
+
+.table-container:not(:hover)::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .connections-table {
@@ -1448,6 +1917,7 @@ export default {
   background-color: #eaeaea;
   border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 4px;
 }
 
 .signal-bar {
@@ -1512,11 +1982,65 @@ export default {
 }
 
 /* WiFi Networks */
-.wifi-networks-container {
+.wifi-networks-container, .wifi-scan-container {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.wifi-scan-container {
+  margin-bottom: 16px;
+  border: 1px solid var(--ark-color-black-shadow);
+  border-radius: 4px;
+  padding: 12px;
+  background-color: #f8f9fa;
+}
+
+.wifi-scan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.wifi-scan-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ark-color-black);
+}
+
+.wifi-scan-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: var(--ark-color-blue);
+  color: var(--ark-color-white);
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.wifi-networks-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.wifi-networks-list::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.wifi-networks-list::-webkit-scrollbar-thumb {
+  background-color: var(--ark-color-black-shadow);
+  border-radius: 3px;
 }
 
 .scanning-overlay {
@@ -1543,6 +2067,20 @@ export default {
   margin-bottom: 12px;
 }
 
+.empty-networks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  color: var(--ark-color-black);
+  opacity: 0.6;
+}
+
+.empty-networks i {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
 .wifi-network-item {
   display: flex;
   align-items: center;
@@ -1557,6 +2095,16 @@ export default {
 }
 
 .wifi-network-item.connected {
+  border-color: var(--ark-color-green);
+  background-color: var(--ark-color-green-shadow);
+}
+
+.form-wifi-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.form-wifi-item.selected {
   border-color: var(--ark-color-green);
   background-color: var(--ark-color-green-shadow);
 }
@@ -1609,8 +2157,7 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 120px;
-  margin-right: 12px;
+  width: 80px;
 }
 
 .signal-value {
@@ -1646,6 +2193,7 @@ export default {
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
+  width: 100%;
 }
 
 .priority-item {
@@ -1739,49 +2287,88 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.chart-container {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #e0e0e0;
-}
-
-.simple-chart {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  overflow-x: hidden;  /* Prevent horizontal scrolling */
+  overflow-y: auto;    /* Enable vertical scrolling */
+  flex: 1;             /* Take up available space */
+  padding: 4px 0;      /* Add vertical padding only */
+  max-height: 100%;    /* Allow container to fill available space */
 }
 
-.chart-bar-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Rate-related styles */
+.rate-bar-container {
+  position: relative;
+  height: 14px;
+  background-color: #e0e0e0;
+  border-radius: 7px;
+  overflow: hidden;
 }
 
-.chart-label {
+.rate-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: width 0.5s ease-out;
+  border-radius: 7px;
+}
+
+.rate-bar-fill.download {
+  background-color: var(--ark-color-green);
+}
+
+.rate-bar-fill.upload {
+  background-color: var(--ark-color-blue);
+}
+
+.download-value {
+  color: var(--ark-color-green);
   font-weight: 500;
-  margin-bottom: 4px;
 }
 
-.chart-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.upload-value {
+  color: var(--ark-color-blue);
+  font-weight: 500;
+}
+
+/* Interface status */
+.interface-status {
+  color: var(--ark-color-red);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 576px) {
+  .rate-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .rate-label {
+    width: auto;
+    text-align: left;
+  }
+
+  .rate-bar-container {
+    width: 100%;
+  }
 }
 
 .chart-bar-container {
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 24px; /* Fixed height */
+  min-width: 100%;
 }
 
 .chart-bar {
   height: 16px;
   border-radius: 4px;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease; /* Smooth transitions */
+  min-width: 0; /* Allow bars to be truly zero width */
 }
 
 .chart-bar.download {
@@ -1795,6 +2382,8 @@ export default {
 .chart-value {
   font-size: 0.8rem;
   min-width: 80px;
+  flex-shrink: 0; /* Prevent squishing */
+  text-align: right;
 }
 
 .chart-empty {
@@ -1804,43 +2393,222 @@ export default {
   color: var(--ark-color-black);
 }
 
-.timeframe-dropdown {
-  padding: 8px;
-  border: 1px solid var(--ark-color-black-shadow);
+.statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.packet-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stat-item {
+  background-color: #f8f9fa;
   border-radius: 4px;
-  background-color: var(--ark-color-white);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--ark-color-black);
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .usage-details {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  margin: 0 auto;
+  max-width: 900px; /* Limit maximum width for better readability */
+  flex: 1; /* Take up remaining space */
+  height: auto; /* Let content determine height */
 }
 
 .usage-item {
-  padding: 12px;
+  padding: 16px;
   border: 1px solid var(--ark-color-black-shadow);
   border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.usage-item:hover {
+  box-shadow: 0 2px 8px var(--ark-color-black-shadow);
+}
+
+.usage-item.expanded {
+  background-color: #f8f9fa;
+}
+
+.usage-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.usage-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 0.8rem;
+  color: var(--ark-color-black);
+  opacity: 0.7;
+}
+
+.detail-value {
+  font-weight: 500;
+}
+
+.usage-statistics, .usage-total-traffic {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--ark-color-black-shadow);
+}
+
+.usage-stat-header {
+  font-weight: 500;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: var(--ark-color-black);
+}
+
+.traffic-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.traffic-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.traffic-label {
+  font-size: 0.8rem;
+  color: var(--ark-color-black);
+  opacity: 0.7;
+}
+
+.traffic-value {
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .usage-item-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.usage-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .usage-name {
-  font-weight: 500;
+  font-weight: 600;
 }
 
-.usage-total {
+.usage-interface {
   color: var(--ark-color-black);
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
+.interface-type {
+  background-color: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.usage-rates {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: monospace;
+}
+
+.rate-separator {
+  margin: 0 2px;
+  opacity: 0.5;
+}
+
+.rate-unit {
+  margin-left: 2px;
+  opacity: 0.7;
+  font-size: 0.9rem;
+  margin-right: 8px;
 }
 
 .usage-bars {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Compact rate bars for collapsed view */
+.usage-bars-compact {
+  margin-bottom: 4px;
+}
+
+.usage-bars-compact .rate-bar-container {
+  height: 4px;
+  margin-bottom: 2px;
+  background-color: #eaeaea;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Expanded details section */
+.usage-details-expanded {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px dashed var(--ark-color-black-shadow);
+  animation: fadeIn 0.3s ease;
+  width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .usage-bar-group {
@@ -1883,6 +2651,10 @@ export default {
 
 .usage-bar.upload {
   background-color: var(--ark-color-blue);
+}
+
+.usage-bar.lighter {
+  opacity: 0.7;
 }
 
 /* Empty States */
@@ -2150,9 +2922,12 @@ input:checked + .toggle-slider:before {
 /* LTE Modem Section */
 .lte-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, 1fr);  /* Force 3 columns for better layout */
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .lte-info-card {
@@ -2160,12 +2935,14 @@ input:checked + .toggle-slider:before {
   border-radius: 8px;
   padding: 16px;
   border: 1px solid var(--ark-color-black-shadow);
+  overflow: hidden;
 }
 
 .info-label {
   color: var(--ark-color-black);
   font-size: 0.8rem;
   margin-bottom: 8px;
+  opacity: 0.7;
 }
 
 .info-value {
@@ -2173,33 +2950,53 @@ input:checked + .toggle-slider:before {
   display: flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .text-success {
   color: var(--ark-color-green);
 }
 
-.lte-connection-panel {
+.lte-actions-container {
   background-color: #f8f9fa;
   border-radius: 8px;
   padding: 16px;
   border: 1px solid var(--ark-color-black-shadow);
-}
-
-.panel-title {
-  font-weight: 600;
-  color: var(--ark-color-black-bold);
-  margin-bottom: 16px;
+  width: 100%;
+  margin-top: 20px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .lte-connect-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 100%;
+}
+
+.apn-form-group {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.apn-form-group label {
+  flex-shrink: 0;
 }
 
 .apn-input-container {
   position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.wide-input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .detected-apn-info {
@@ -2266,6 +3063,25 @@ input:checked + .toggle-slider:before {
   background-color: var(--ark-color-red-hover);
 }
 
+/* For showing fake data during testing */
+.empty-state.with-fake-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state.with-fake-data .empty-message {
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #ccc;
+}
+
+.empty-state.with-fake-data .note {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin-top: 5px;
+  font-style: italic;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -2284,7 +3100,7 @@ input:checked + .toggle-slider:before {
   margin-bottom: 16px;
 }
 
-.error-message {
+.error-message, .error-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2293,9 +3109,37 @@ input:checked + .toggle-slider:before {
   color: var(--ark-color-red);
 }
 
-.error-message i {
+.error-message i, .error-container i {
   font-size: 2rem;
   margin-bottom: 16px;
+}
+
+.error-container p {
+  margin-bottom: 16px;
+  text-align: center;
+  max-width: 80%;
+}
+
+/* Smaller, less intrusive error message */
+.error-message-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  margin-bottom: 10px;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 4px;
+  color: var(--ark-color-red);
+}
+
+.error-message-small i {
+  font-size: 1rem;
+  margin-right: 8px;
+}
+
+.error-message-small p {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 /* Responsive Adjustments */
@@ -2319,6 +3163,12 @@ input:checked + .toggle-slider:before {
   .lte-connected-info {
     flex-direction: column;
     gap: 16px;
+  }
+}
+
+@media (max-width: 992px) and (min-width: 769px) {
+  .lte-info-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

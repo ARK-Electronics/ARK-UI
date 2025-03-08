@@ -29,21 +29,29 @@ export default {
     };
   },
   mounted() {
-    // this.socket = io('http://localhost:3000');
-    // this.socket = io(`${window.location.protocol}//${window.location.host}/socket.io`);
-    // this.socket = io(`${window.location.protocol}//${window.location.host}`);
-    this.socket = io(process.env.VUE_APP_SOCKET_URL);
+    // Connect to the firmware update socket
+    this.socket = io(process.env.VUE_APP_SOCKET_URL, {
+      path: process.env.VUE_APP_SOCKET_PATH,
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
 
-    this.socket.on('connect', () => console.log(`Connected with Socket ID: ${this.socket.id}`));
+    this.socket.on('connect', () => {
+      console.log(`Connected to firmware update socket with ID: ${this.socket.id}`);
+    });
+
     this.socket.on('progress', data => {
       this.progress = data.percent;
       this.statusMessage = `${data.status} ${data.percent.toFixed(2)}%`;
       this.isUploading = true;
     });
+
     this.socket.on('completed', message => {
       this.statusMessage = message.message;
       this.isUploading = false;
     });
+
     this.socket.on('error', error => {
       this.statusMessage = `Error: ${error.message}`;
       console.error('Error:', error);

@@ -23,10 +23,10 @@ app.use(fileUpload({ limits: { fileSize: 3 * 1024 * 1024 } })); // 3MB max, MCU 
 app.use(cors());
 
 io.on('connection', (socket) => {
-  console.log('a user connected', socket.id);
+  console.log('New socket connection established:', socket.id);
 
   socket.on('disconnect', () => {
-    console.log('user disconnected', socket.id);
+    console.log('Socket disconnected:', socket.id);
   });
 });
 
@@ -195,7 +195,7 @@ app.get('/api/service/logs', async (req, res) => {
   console.log(`/api/service/logs GET for ${serviceName}`);
   try {
     const result = await execScript('service_get_logs.sh', [serviceName]);
-    res.send(result);
+  res.send(result);
   } catch (error) {
     res.status(500).send(`Error retrieving logs for ${serviceName}`);
     console.error(`Error retrieving logs for ${serviceName}:`, error.message);
