@@ -568,59 +568,6 @@
         <p>Loading LTE modem information...</p>
       </div>
 
-      <div v-else-if="lteStatus.status === 'not_found'" class="empty-state with-fake-data">
-        <div class="empty-message">
-          <i class="fas fa-broadcast-tower"></i>
-          <p>No LTE modem detected</p>
-          <p class="note">Showing example data for display purposes</p>
-        </div>
-
-        <!-- Example data for display purposes -->
-        <div class="lte-info-grid">
-          <div class="lte-info-card">
-            <div class="info-label">Model</div>
-            <div class="info-value">Quectel EP06-E</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">Operator</div>
-            <div class="info-value">AT&T</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">State</div>
-            <div class="info-value text-success">Connected</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">Signal</div>
-            <div class="info-value">
-              <div class="signal-container">
-                <div class="signal-bar signal-strong" style="width: 75%"></div>
-              </div>
-              <span>-65 dBm</span>
-            </div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">APN</div>
-            <div class="info-value">phone</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">IP Address</div>
-            <div class="info-value">100.12.45.78</div>
-          </div>
-        </div>
-
-        <div class="lte-actions-container">
-          <div class="lte-connected-info">
-            <div class="connected-message">
-              <i class="fas fa-check-circle"></i>
-              <p>Connected to LTE network via APN: <strong>phone</strong></p>
-            </div>
-            <button class="disconnect-button">
-              Disconnect
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div v-else-if="lteStatus.status === 'error'" class="error-message">
         <i class="fas fa-exclamation-triangle"></i>
         <p>Error fetching LTE status: {{ lteStatus.message }}</p>
@@ -638,8 +585,15 @@
           </div>
           <div class="lte-info-card">
             <div class="info-label">State</div>
-            <div class="info-value" :class="lteStatus.connected ? 'text-success' : ''">
-              {{ lteStatus.state || '--' }}
+            <div class="info-value"
+                 :class="{
+                   'text-success': lteStatus.fully_connected,
+                   'text-warning': lteStatus.network_registered && !lteStatus.fully_connected,
+                   'text-error': !lteStatus.network_registered && !lteStatus.fully_connected
+                 }">
+              <span v-if="lteStatus.fully_connected">Connected (Online)</span>
+              <span v-else-if="lteStatus.network_registered">Registered (No Data)</span>
+              <span v-else>{{ lteStatus.state || '--' }}</span>
             </div>
           </div>
           <div class="lte-info-card">
@@ -653,7 +607,7 @@
                     :class="getSignalClass(lteStatus.signal)"
                   ></div>
                 </div>
-                <span>{{ (lteStatus.rssi || lteStatus.signal) + ' dBm' }}</span>
+                <span>{{ lteStatus.signal + '%' }}</span>
               </template>
               <span v-else>--</span>
             </div>
@@ -669,12 +623,12 @@
         </div>
 
         <div class="lte-actions-container">
-          <div v-if="!lteStatus.connected" class="lte-connect-form">
+          <div v-if="!lteStatus.fully_connected" class="lte-connect-form">
             <div class="form-group apn-form-group">
               <label for="lte-apn">APN:</label>
               <div class="apn-input-container">
                 <input type="text" id="lte-apn" v-model="lteApn" class="wide-input"
-                  :placeholder="lteStatus.detectedApn ? 
+                  :placeholder="lteStatus.detectedApn ?
                     `${lteStatus.detectedApn}` :
                     'Enter APN'">
               </div>
@@ -683,14 +637,21 @@
               <i class="fas fa-info-circle"></i>
               <span>APN detected from carrier: {{ lteStatus.operator }}</span>
             </div>
-            <button 
-              @click="connectLte" 
+
+            <!-- Add a message if registered but not fully connected -->
+            <div v-if="lteStatus.network_registered && !lteStatus.fully_connected" class="network-registered-message">
+              <i class="fas fa-info-circle"></i>
+              <span>Modem is registered to network but not connected to data service. Try connecting with an APN.</span>
+            </div>
+
+            <button
+              @click="connectLte"
               class="connect-button"
             >
               Connect
             </button>
           </div>
-          
+
           <div v-else class="lte-connected-info">
             <div class="connected-message">
               <i class="fas fa-check-circle"></i>
@@ -703,7 +664,6 @@
         </div>
       </div>
     </div>
-    </div> <!-- Close tab-content-wrapper -->
   </div>
 </template>
 
@@ -3140,6 +3100,32 @@ input:checked + .toggle-slider:before {
 .error-message-small p {
   margin: 0;
   font-size: 0.9rem;
+}
+
+.text-warning {
+  color: var(--ark-color-orange);
+}
+
+.text-error {
+  color: var(--ark-color-red);
+}
+
+.network-registered-message {
+  margin: 10px 0;
+  padding: 8px;
+  background-color: rgba(255, 140, 0, 0.1);
+  border-radius: 4px;
+  color: var(--ark-color-orange);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.small-text {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 4px;
 }
 
 /* Responsive Adjustments */
