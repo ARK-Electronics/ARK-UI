@@ -10,7 +10,7 @@ const routes = [
     component: OverviewPage
   },
   {
-    path: '/wifi-config',
+    path: '/network',
     name: 'NetworkPage',
     component: NetworkPage
   },
