@@ -441,10 +441,10 @@
             </div>
 
             <div v-if="newConnection.mode === 'infrastructure'" class="form-group">
-              <label for="wifi-autoconnect">Auto-Connect:</label>
+              <span class="label-text">Auto-Connect:</span>
               <div class="toggle-switch">
                 <input type="checkbox" id="wifi-autoconnect" v-model="newConnection.autoconnect">
-                <span class="toggle-slider"></span>
+                <label for="wifi-autoconnect" class="toggle-slider"></label>
               </div>
             </div>
 
