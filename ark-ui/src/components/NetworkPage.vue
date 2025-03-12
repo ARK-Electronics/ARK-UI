@@ -551,11 +551,145 @@
 
     <!-- LTE Modem Section -->
     <div v-if="activeSection === 'lte'" class="section-container">
-    <!-- TODO: add our LTE status section here. We should be able to trigger a connect/disconnect depending on our state.
-    We should show the IPv4 config settings somewhere, but only if we're connected, since we won't have any IP or anything when
-    we're just in the 'registered' state. We should also show another little section with our interface name and status (UP or DOWN)
-    once the interface is created (using the ip link commands). Eventually I envision adding datarate/statistics for the interface similar
-    to what we did for the other networkmanager managed connections. -->
+      <div class="section-header">
+        <h2 class="section-title">LTE Modem</h2>
+        <div class="header-actions">
+          <button @click="refreshLteStatus" class="refresh-button" :disabled="refreshingLte">
+            <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingLte }"></i>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div v-if="loadingLte" class="loading-container">
+        <div class="loading-spinner"></div>
+        <span>Loading modem information...</span>
+      </div>
+      
+      <div v-else-if="lteStatus.status === 'not_available'" class="error-container">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>LTE functionality is only available on Jetson platform.</span>
+      </div>
+      
+      <div v-else-if="lteStatus.status === 'not_found'" class="error-container">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>No LTE modem detected. Please check your hardware connection.</span>
+      </div>
+      
+      <div v-else-if="lteStatus.status === 'error'" class="error-container">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>{{ lteStatus.message || 'Error retrieving LTE status' }}</span>
+      </div>
+      
+      <div v-else class="lte-content">
+        <!-- Modem Status Card -->
+        <div class="lte-status-card">
+          <div class="lte-status-header">
+            <h3>Modem Status</h3>
+            <div class="status-badge" :class="lteStatus.state">
+              {{ lteStatus.state || 'unknown' }}
+            </div>
+          </div>
+          
+          <div class="lte-info-grid">
+            <div class="lte-info-item">
+              <span class="info-label">Manufacturer:</span>
+              <span class="info-value">{{ lteStatus.manufacturer || '-' }}</span>
+            </div>
+            <div class="lte-info-item">
+              <span class="info-label">Model:</span>
+              <span class="info-value">{{ lteStatus.model || '-' }}</span>
+            </div>
+            <div class="lte-info-item">
+              <span class="info-label">IMEI:</span>
+              <span class="info-value">{{ lteStatus.imei || '-' }}</span>
+            </div>
+            <div class="lte-info-item">
+              <span class="info-label">Carrier:</span>
+              <span class="info-value">{{ lteStatus.operatorName || '-' }}</span>
+            </div>
+            <div class="lte-info-item">
+              <span class="info-label">Signal Strength:</span>
+              <span class="info-value">
+                <div class="signal-container">
+                  <div class="signal-bar" 
+                       :style="{ width: `${lteStatus.signalStrength || 0}%` }" 
+                       :class="getSignalClass(lteStatus.signalStrength)">
+                  </div>
+                </div>
+                {{ lteStatus.signalStrength || 0 }}%
+              </span>
+            </div>
+            <div class="lte-info-item">
+              <span class="info-label">APN:</span>
+              <span class="info-value">{{ lteStatus.apn || lteStatus.defaultApn || '-' }}</span>
+            </div>
+          </div>
+          
+          <div class="lte-actions">
+            <button v-if="lteStatus.state !== 'connected'" 
+                    @click="connectLte" 
+                    class="connect-button">
+              <i class="fas fa-plug"></i>
+              Connect
+            </button>
+            <button v-else 
+                    @click="disconnectLte" 
+                    class="disconnect-button">
+              <i class="fas fa-unlink"></i>
+              Disconnect
+            </button>
+          </div>
+        </div>
+        
+        <!-- Connected Interface Info (only shown when connected) -->
+        <div v-if="lteStatus.state === 'connected' && lteStatus.interface" class="lte-connected-info">
+          <div class="lte-interface-card">
+            <h3>Network Interface</h3>
+            
+            <div class="lte-info-grid">
+              <div class="lte-info-item">
+                <span class="info-label">Interface:</span>
+                <span class="info-value">{{ lteStatus.interface }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">Status:</span>
+                <span class="info-value status-badge" :class="lteStatus.interfaceState === 'up' ? 'active' : 'inactive'">
+                  {{ lteStatus.interfaceState === 'up' ? 'UP' : 'DOWN' }}
+                </span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">IP Address:</span>
+                <span class="info-value">{{ lteStatus.ipAddress || '-' }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">Gateway:</span>
+                <span class="info-value">{{ lteStatus.gateway || '-' }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">Prefix:</span>
+                <span class="info-value">{{ lteStatus.prefix || '-' }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">MTU:</span>
+                <span class="info-value">{{ lteStatus.mtu || '1500' }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="lte-dns-card">
+            <h3>DNS Servers</h3>
+            <div v-if="lteStatus.dns && lteStatus.dns.length" class="dns-server-list">
+              <div v-for="(dns, index) in lteStatus.dns" :key="index" class="dns-server-item">
+                <i class="fas fa-server"></i> {{ dns }}
+              </div>
+            </div>
+            <div v-else class="empty-dns">
+              <span>No DNS servers configured</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -1150,6 +1284,20 @@ export default {
       } catch (error) {
         console.error('Failed to disconnect from LTE:', error);
         alert('Failed to disconnect from LTE network.');
+      }
+    },
+    
+    getSignalClass(strength) {
+      if (!strength || typeof strength !== 'number') {
+        return 'poor';
+      }
+      
+      if (strength >= 70) {
+        return 'good';
+      } else if (strength >= 40) {
+        return 'fair';
+      } else {
+        return 'poor';
       }
     },
     
@@ -2740,11 +2888,214 @@ input:checked + .toggle-slider:before {
 }
 
 /* LTE Modem Section */
+.lte-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lte-status-card, .lte-interface-card, .lte-dns-card {
+  background-color: var(--ark-color-white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--ark-color-black-shadow);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lte-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lte-status-header h3, .lte-interface-card h3, .lte-dns-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--ark-color-black);
+}
+
 .lte-info-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);  /* Force 3 columns for better layout */
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
+}
+
+.lte-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: var(--ark-color-black);
+  opacity: 0.7;
+}
+
+.info-value {
+  font-size: 1rem;
+  color: var(--ark-color-black-bold);
+}
+
+.lte-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.connect-button, .disconnect-button {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  gap: 8px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.connect-button {
+  background-color: var(--ark-color-green);
+  color: var(--ark-color-white);
+}
+
+.connect-button:hover {
+  background-color: var(--ark-color-green-hover);
+}
+
+.disconnect-button {
+  background-color: var(--ark-color-red);
+  color: var(--ark-color-white);
+}
+
+.disconnect-button:hover {
+  background-color: var(--ark-color-red-hover);
+}
+
+.lte-connected-info {
+  display: flex;
+  gap: 20px;
+}
+
+.lte-interface-card, .lte-dns-card {
+  flex: 1;
+}
+
+.dns-server-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dns-server-item {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dns-server-item i {
+  color: var(--ark-color-blue);
+}
+
+.empty-dns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
+  color: var(--ark-color-black);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.signal-container {
+  width: 100%;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.signal-bar {
+  height: 100%;
+  background-color: var(--ark-color-blue);
+  border-radius: 4px;
+}
+
+.signal-bar.good {
+  background-color: var(--ark-color-green);
+}
+
+.signal-bar.fair {
+  background-color: var(--ark-color-orange);
+}
+
+.signal-bar.poor {
+  background-color: var(--ark-color-red);
+}
+
+/* Status badge colors */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--ark-color-white);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.status-badge.connected {
+  background-color: var(--ark-color-green);
+}
+
+.status-badge.registered {
+  background-color: var(--ark-color-blue);
+}
+
+.status-badge.searching {
+  background-color: var(--ark-color-orange);
+}
+
+.status-badge.disabled, 
+.status-badge.not_ready {
+  background-color: var(--ark-color-red);
+}
+
+.status-badge.active {
+  background-color: var(--ark-color-green);
+}
+
+.status-badge.inactive {
+  background-color: var(--ark-color-red);
+}
+
+@media (max-width: 768px) {
+  .lte-info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .lte-connected-info {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 992px) and (min-width: 769px) {
+  .lte-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
   width: 100%;
   max-width: 100%;
   overflow: hidden;
