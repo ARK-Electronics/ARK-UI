@@ -732,9 +732,6 @@ export default {
       lteStatus: { status: 'loading' },
       loadingLte: true,
       refreshingLte: false,
-      lteApn: '',
-      lteDetectedApn: '',
-      lteDetectedCarrier: '',
       
       // New connection data
       newConnection: {
@@ -1223,20 +1220,9 @@ export default {
       try {
         const response = await ConnectionsService.getLteStatus();
 
-        // In Vue 2, we should use Vue.set for reactivity, but for simplicity
-        // let's just replace the whole object which works fine
+        // Put whole response into our data object
         this.lteStatus = response.data;
-        
-        // Update APN field with current or detected value
-        if (response.data.connected && response.data.apn) {
-          this.lteApn = response.data.apn;
-        } else if (response.data.detectedApn && !this.lteApn) {
-          // Only set detected APN if user hasn't entered anything
-          this.lteDetectedApn = response.data.detectedApn;
-          this.lteDetectedCarrier = response.data.operator;
-        }
-        
-        // Always show LTE tab regardless of detection status
+
       } catch (error) {
         console.error('Failed to fetch LTE status:', error);
         this.lteStatus = { status: 'error', message: error.message || 'Failed to fetch LTE status' };
@@ -1255,10 +1241,7 @@ export default {
     
     async connectLte() {
       try {
-        // If user left APN blank but we have a detected one, use that
-        const apnToUse = this.lteApn || (this.lteStatus.detectedApn || null);
-        
-        await ConnectionsService.connectLte(apnToUse);
+        await ConnectionsService.connectLte(this.lteStatus.apn);
         
         // Wait for connection to be established
         setTimeout(async () => {
