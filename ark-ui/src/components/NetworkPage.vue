@@ -582,7 +582,6 @@
       </div>
       
       <div v-else class="lte-content">
-        <!-- Modem Status Card -->
         <div class="lte-status-card">
           <div class="lte-status-header">
             <h3>Modem Status</h3>
@@ -641,8 +640,7 @@
             </button>
           </div>
         </div>
-        
-        <!-- Connected Interface Info (only shown when connected) -->
+
         <div v-if="lteStatus.state === 'connected' && lteStatus.interface" class="lte-connected-info">
           <div class="lte-interface-card">
             <h3>Network Interface</h3>
@@ -1286,21 +1284,6 @@ export default {
         alert('Failed to disconnect from LTE network.');
       }
     },
-    
-    getSignalClass(strength) {
-      if (!strength || typeof strength !== 'number') {
-        return 'poor';
-      }
-      
-      if (strength >= 70) {
-        return 'good';
-      } else if (strength >= 40) {
-        return 'fair';
-      } else {
-        return 'poor';
-      }
-    },
-    
     
     // --- Connection Management ---
     
@@ -3089,16 +3072,6 @@ input:checked + .toggle-slider:before {
     flex-direction: column;
     gap: 16px;
   }
-}
-
-@media (max-width: 992px) and (min-width: 769px) {
-  .lte-info-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
 }
 
 .lte-info-card {
