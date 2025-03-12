@@ -505,8 +505,6 @@
               </button>
             </div>
           </form>
-
-          <!-- LTE Connection Form removed - LTE handled in dedicated tab -->
         </div>
       </div>
     </div>
@@ -553,116 +551,11 @@
 
     <!-- LTE Modem Section -->
     <div v-if="activeSection === 'lte'" class="section-container">
-      <div class="section-header">
-        <h2 class="section-title">LTE Modem</h2>
-        <div class="header-actions">
-          <button @click="refreshLteStatus" class="refresh-button">
-            <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingLte }"></i>
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <div v-if="loadingLte" class="loading-container">
-        <div class="spinner"></div>
-        <p>Loading LTE modem information...</p>
-      </div>
-
-      <div v-else-if="lteStatus.status === 'error'" class="error-message">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>Error fetching LTE status: {{ lteStatus.message }}</p>
-      </div>
-
-      <div v-else>
-        <div class="lte-info-grid">
-          <div class="lte-info-card">
-            <div class="info-label">Model</div>
-            <div class="info-value">{{ lteStatus.model || '--' }}</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">Operator</div>
-            <div class="info-value">{{ lteStatus.operator || '--' }}</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">State</div>
-            <div class="info-value"
-                 :class="{
-                   'text-success': lteStatus.fully_connected,
-                   'text-warning': lteStatus.network_registered && !lteStatus.fully_connected,
-                   'text-error': !lteStatus.network_registered && !lteStatus.fully_connected
-                 }">
-              <span v-if="lteStatus.fully_connected">Connected (Online)</span>
-              <span v-else-if="lteStatus.network_registered">Registered (No Data)</span>
-              <span v-else>{{ lteStatus.state || '--' }}</span>
-            </div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">Signal</div>
-            <div class="info-value">
-              <template v-if="lteStatus.signal !== undefined && lteStatus.signal !== null">
-                <div class="signal-container">
-                  <div
-                    class="signal-bar"
-                    :style="{ width: `${lteStatus.signal}%` }"
-                    :class="getSignalClass(lteStatus.signal)"
-                  ></div>
-                </div>
-                <span>{{ lteStatus.signal + '%' }}</span>
-              </template>
-              <span v-else>--</span>
-            </div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">APN</div>
-            <div class="info-value">{{ lteStatus.apn || '--' }}</div>
-          </div>
-          <div class="lte-info-card">
-            <div class="info-label">IP Address</div>
-            <div class="info-value">{{ lteStatus.ip_address || '--' }}</div>
-          </div>
-        </div>
-
-        <div class="lte-actions-container">
-          <div v-if="!lteStatus.fully_connected" class="lte-connect-form">
-            <div class="form-group apn-form-group">
-              <label for="lte-apn">APN:</label>
-              <div class="apn-input-container">
-                <input type="text" id="lte-apn" v-model="lteApn" class="wide-input"
-                  :placeholder="lteStatus.detectedApn ?
-                    `${lteStatus.detectedApn}` :
-                    'Enter APN'">
-              </div>
-            </div>
-            <div v-if="lteStatus.detectedApn" class="detected-apn-info">
-              <i class="fas fa-info-circle"></i>
-              <span>APN detected from carrier: {{ lteStatus.operator }}</span>
-            </div>
-
-            <!-- Add a message if registered but not fully connected -->
-            <div v-if="lteStatus.network_registered && !lteStatus.fully_connected" class="network-registered-message">
-              <i class="fas fa-info-circle"></i>
-              <span>Modem is registered to network but not connected to data service. Try connecting with an APN.</span>
-            </div>
-
-            <button
-              @click="connectLte"
-              class="connect-button"
-            >
-              Connect
-            </button>
-          </div>
-
-          <div v-else class="lte-connected-info">
-            <div class="connected-message">
-              <i class="fas fa-check-circle"></i>
-              <p>Connected to LTE network via APN: <strong>{{ lteStatus.apn }}</strong></p>
-            </div>
-            <button @click="disconnectLte" class="disconnect-button">
-              Disconnect
-            </button>
-          </div>
-        </div>
-      </div>
+    <!-- TODO: add our LTE status section here. We should be able to trigger a connect/disconnect depending on our state.
+    We should show the IPv4 config settings somewhere, but only if we're connected, since we won't have any IP or anything when
+    we're just in the 'registered' state. We should also show another little section with our interface name and status (UP or DOWN)
+    once the interface is created (using the ip link commands). Eventually I envision adding datarate/statistics for the interface similar
+    to what we did for the other networkmanager managed connections. -->
     </div>
   </div>
 </template>
@@ -731,13 +624,6 @@ export default {
         prefix: 24,
         dns1: '',
         dns2: '',
-        
-        // LTE specific
-        apn: '',
-        username: '',
-        ltePassword: '',
-        dataLimit: 0,
-        ltePriority: 'low'
       },
       
       // Refresh intervals
@@ -1309,12 +1195,6 @@ export default {
         this.newConnection.prefix = 24;
         this.newConnection.dns1 = '';
         this.newConnection.dns2 = '';
-      } else if (connection.type === 'lte') {
-        this.newConnection.apn = connection.apn || '';
-        this.newConnection.username = '';
-        this.newConnection.ltePassword = '';
-        this.newConnection.dataLimit = 0;
-        this.newConnection.ltePriority = 'low';
       }
       
       this.showConnectionForm = true;
@@ -1437,8 +1317,6 @@ export default {
         this.newConnection.mode = 'infrastructure';
         // Trigger a scan immediately when selecting WiFi type
         this.scanWifiFromConnectionForm();
-      } else if (type === 'lte') {
-        this.newConnection.name = 'LTE Connection';
       } else if (type === 'ethernet') {
         this.newConnection.name = 'Ethernet Connection';
       }
@@ -1463,28 +1341,12 @@ export default {
         prefix: 24,
         dns1: '',
         dns2: '',
-        
-        // LTE specific
-        apn: '',
-        username: '',
-        ltePassword: '',
-        dataLimit: 0,
-        ltePriority: 'low'
       };
     },
     
     async saveConnection() {
       try {
         const payload = { ...this.newConnection };
-        
-        // Handle LTE password and priority
-        if (this.connectionType === 'lte') {
-          payload.password = payload.ltePassword;
-          delete payload.ltePassword;
-          
-          payload.priority = payload.ltePriority;
-          delete payload.ltePriority;
-        }
         
         if (this.isEditingConnection) {
           await ConnectionsService.updateConnection(payload.id, payload);
@@ -1520,8 +1382,6 @@ export default {
           : '<i class="fas fa-wifi-slash connection-icon wifi-inactive"></i>';
       } else if (type === 'ethernet') {
         return '<i class="fas fa-network-wired connection-icon ethernet"></i>';
-      } else if (type === 'lte') {
-        return '<i class="fas fa-broadcast-tower connection-icon lte"></i>';
       }
       
       return '<i class="fas fa-question-circle connection-icon unknown"></i>';
