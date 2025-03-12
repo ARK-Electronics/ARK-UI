@@ -650,7 +650,7 @@
                 </div>
                 <div class="lte-info-item">
                   <span class="info-label">Status:</span>
-                  <span class="info-value status-badge" :class="lteStatus.interfaceState === 'up' ? 'active' : 'inactive'">
+                  <span class="info-value" :class="lteStatus.interfaceState === 'up' ? 'active' : 'inactive'">
                     {{ lteStatus.interfaceState === 'up' ? 'UP' : 'DOWN' }}
                   </span>
                 </div>
@@ -1244,9 +1244,9 @@ export default {
         await ConnectionsService.connectLte(this.lteStatus.apn);
         
         // Wait for connection to be established
-        // setTimeout(async () => {
-        //   await this.refreshLteStatus();
-        // }, 10000);
+        setTimeout(async () => {
+          await this.refreshLteStatus();
+        }, 5000);
       } catch (error) {
         console.error('Failed to connect to LTE:', error);
         alert('Failed to connect to LTE. Please check your APN settings and try again.');
@@ -1258,9 +1258,9 @@ export default {
         await ConnectionsService.disconnectLte();
         
         // Wait for disconnection to complete
-        // setTimeout(async () => {
-        //   await this.refreshLteStatus();
-        // }, 2000);
+        setTimeout(async () => {
+          await this.refreshLteStatus();
+        }, 5000);
       } catch (error) {
         console.error('Failed to disconnect from LTE:', error);
         alert('Failed to disconnect from LTE network.');
