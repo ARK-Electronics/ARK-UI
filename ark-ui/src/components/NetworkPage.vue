@@ -40,650 +40,649 @@
     <div class="tab-content-wrapper">
       <!-- Connections Section -->
       <div v-if="activeSection === 'current'" class="section-container">
-      <div class="section-header">
-        <h2 class="section-title">Connections</h2>
-        <div class="header-actions">
-          <button @click="fetchConnections" class="refresh-button">
-            <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
-            Refresh
-          </button>
-          <button @click="showAddConnectionForm" class="add-button">
-            <i class="fas fa-plus"></i>
-            Add Connection
-          </button>
-        </div>
-      </div>
-
-      <div class="table-container">
-        <table class="connections-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Signal</th>
-              <th>IP Address</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr 
-              v-for="connection in connections" 
-              :key="connection.id"
-              :class="{ 'active-row': connection.status === 'active' }"
-            >
-              <td>
-                <div class="connection-name">
-                  <span v-html="getConnectionIcon(connection.type, connection.status)"></span>
-                  <span>{{ connection.name }}</span>
-                </div>
-              </td>
-              <td class="capitalize">{{ connection.type }}</td>
-              <td>
-                <span class="status-badge" :class="connection.status">
-                  {{ connection.status }}
-                </span>
-              </td>
-              <td>
-                <div v-if="connection.type !== 'ethernet'" class="signal-container">
-                  <div class="signal-bar" :style="{ width: `${connection.signalStrength}%` }" :class="getSignalClass(connection.signalStrength)"></div>
-                </div>
-                <span v-else class="wired-signal">Wired (100%)</span>
-              </td>
-              <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
-              <td class="actions">
-                <button @click="configureConnection(connection)" class="icon-button configure">
-                  <i class="fas fa-cog"></i>
-                </button>
-                <button 
-                  @click="toggleConnection(connection)" 
-                  class="icon-button"
-                  :class="connection.status === 'active' ? 'disconnect' : 'connect'"
-                >
-                  <i :class="connection.status === 'active' ? 'fas fa-stop' : 'fas fa-play'"></i>
-                </button>
-                <button @click="deleteConnection(connection)" class="icon-button delete">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </td>
-            </tr>
-            <tr v-if="connections.length === 0">
-              <td colspan="6" class="empty-state">
-                <div class="empty-message">
-                  <i class="fas fa-network-wired"></i>
-                  <p>No connections found</p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Available WiFi Section removed - integrated into connection form -->
-
-    <!-- Routing Priorities Section -->
-    <div v-if="activeSection === 'priorities'" class="section-container">
-      <div class="section-header">
-        <h2 class="section-title">Priorities</h2>
-        <div class="header-actions">
-          <button @click="fetchRoutingPriorities" class="refresh-button">
-            <i class="fas fa-sync-alt"></i>
-            Refresh
-          </button>
-          <button
-            @click="savePriorities"
-            class="save-button"
-            :disabled="!prioritiesChanged"
-          >
-            <i class="fas fa-save"></i>
-            Save Changes
-          </button>
-        </div>
-      </div>
-
-      <div class="priorities-container">
-        <div 
-          v-for="(connection, index) in routingPriorities" 
-          :key="connection.id"
-          class="priority-item"
-        >
-          <div class="priority-info">
-            <div class="priority-badge">{{ connection.priority }}</div>
-            <span v-html="getConnectionIcon(connection.type, 'active')"></span>
-            <span class="priority-name">{{ connection.name }}</span>
-            <span class="type-badge">{{ connection.type }}</span>
-          </div>
-
-          <div class="priority-actions">
-            <button 
-              @click="movePriority(connection.id, 'up')"
-              :disabled="index === 0"
-              class="priority-button"
-              :class="{ 'disabled': index === 0 }"
-            >
-              <i class="fas fa-arrow-up"></i>
+        <div class="section-header">
+          <h2 class="section-title">Connections</h2>
+          <div class="header-actions">
+            <button @click="fetchConnections" class="refresh-button">
+              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+              Refresh
             </button>
-            <button 
-              @click="movePriority(connection.id, 'down')"
-              :disabled="index === routingPriorities.length - 1"
-              class="priority-button"
-              :class="{ 'disabled': index === routingPriorities.length - 1 }"
-            >
-              <i class="fas fa-arrow-down"></i>
+            <button @click="showAddConnectionForm" class="add-button">
+              <i class="fas fa-plus"></i>
+              Add Connection
             </button>
           </div>
         </div>
 
-        <div v-if="routingPriorities.length === 0" class="empty-state">
-          <div class="empty-message">
-            <i class="fas fa-random"></i>
-            <p>No active connections to prioritize</p>
-          </div>
+        <div class="table-container">
+          <table class="connections-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Signal</th>
+                <th>IP Address</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="connection in connections"
+                :key="connection.id"
+                :class="{ 'active-row': connection.status === 'active' }"
+              >
+                <td>
+                  <div class="connection-name">
+                    <span v-html="getConnectionIcon(connection.type, connection.status)"></span>
+                    <span>{{ connection.name }}</span>
+                  </div>
+                </td>
+                <td class="capitalize">{{ connection.type }}</td>
+                <td>
+                  <span class="status-badge" :class="connection.status">
+                    {{ connection.status }}
+                  </span>
+                </td>
+                <td>
+                  <div v-if="connection.type !== 'ethernet'" class="signal-container">
+                    <div class="signal-bar" :style="{ width: `${connection.signalStrength}%` }" :class="getSignalClass(connection.signalStrength)"></div>
+                  </div>
+                  <span v-else class="wired-signal">Wired (100%)</span>
+                </td>
+                <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
+                <td class="actions">
+                  <button @click="configureConnection(connection)" class="icon-button configure">
+                    <i class="fas fa-cog"></i>
+                  </button>
+                  <button
+                    @click="toggleConnection(connection)"
+                    class="icon-button"
+                    :class="connection.status === 'active' ? 'disconnect' : 'connect'"
+                  >
+                    <i :class="connection.status === 'active' ? 'fas fa-stop' : 'fas fa-play'"></i>
+                  </button>
+                  <button @click="deleteConnection(connection)" class="icon-button delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="connections.length === 0">
+                <td colspan="6" class="empty-state">
+                  <div class="empty-message">
+                    <i class="fas fa-network-wired"></i>
+                    <p>No connections found</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-    </div>
-
-    <!-- Data Usage Section -->
-    <div v-if="activeSection === 'usage'" class="section-container">
-      <div class="section-header">
-        <h2 class="section-title">Data Usage</h2>
-      </div>
-
-      <div v-if="socketError" class="error-message-small">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>{{ socketError }}</p>
-      </div>
-
-      <div class="usage-container">
-        <div v-if="usageData.length === 0" class="empty-state">
-          <div class="empty-message">
-            <i class="fas fa-chart-bar"></i>
-            <p>Waiting for network data...</p>
+      <!-- Routing Priorities Section -->
+      <div v-if="activeSection === 'priorities'" class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Priorities</h2>
+          <div class="header-actions">
+            <button @click="fetchRoutingPriorities" class="refresh-button">
+              <i class="fas fa-sync-alt"></i>
+              Refresh
+            </button>
+            <button
+              @click="savePriorities"
+              class="save-button"
+              :disabled="!prioritiesChanged"
+            >
+              <i class="fas fa-save"></i>
+              Save Changes
+            </button>
           </div>
         </div>
 
-        <div class="usage-details">
+        <div class="priorities-container">
           <div
-            v-for="(item, idx) in usageData"
-            :key="item.name"
-            class="usage-item"
-            :class="{ 'expanded': expandedInterfaces[idx] }"
-            @click="toggleInterface(idx)"
+            v-for="(connection, index) in routingPriorities"
+            :key="connection.id"
+            class="priority-item"
           >
-            <!-- Always visible header with basic info -->
-            <div class="usage-item-header">
-              <div class="usage-info">
-                <span class="usage-name">{{ item.name }}</span>
-                <span class="usage-interface">({{ item.interface }})</span>
-                <span class="interface-type capitalize">{{ item.type }}</span>
-              </div>
-              <div class="usage-rates">
-                <span class="download-value">↓ {{ item.dataDown.toFixed(1) }}</span>
-                <span class="rate-separator">/</span>
-                <span class="upload-value">↑ {{ item.dataUp.toFixed(1) }}</span>
-                <span class="rate-unit">Mbps</span>
-                <i class="fas" :class="expandedInterfaces[idx] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-              </div>
+            <div class="priority-info">
+              <div class="priority-badge">{{ connection.priority }}</div>
+              <span v-html="getConnectionIcon(connection.type, 'active')"></span>
+              <span class="priority-name">{{ connection.name }}</span>
+              <span class="type-badge">{{ connection.type }}</span>
             </div>
 
-            <!-- Basic rate bars - always visible -->
-            <div class="usage-bars-compact">
-              <div class="rate-bar-container">
-                <div class="rate-bar-fill download"
-                     :style="{ width: calculateBarWidth(item.dataDown) }"></div>
-              </div>
-              <div class="rate-bar-container">
-                <div class="rate-bar-fill upload"
-                     :style="{ width: calculateBarWidth(item.dataUp) }"></div>
-              </div>
-            </div>
-
-            <!-- Expanded details - only visible when expanded -->
-            <div v-if="expandedInterfaces[idx]" class="usage-details-expanded">
-              <!-- Connection details grid -->
-              <div class="usage-details-grid">
-                <div v-if="item.ipAddress" class="usage-detail-item">
-                  <span class="detail-label">IP Address:</span>
-                  <span class="detail-value">{{ item.ipAddress }}</span>
-                </div>
-                <div v-if="item.type === 'wifi' && item.signalStrength" class="usage-detail-item">
-                  <span class="detail-label">Signal Strength:</span>
-                  <span class="detail-value">
-                    <div class="signal-container">
-                      <div class="signal-bar" :style="{ width: `${item.signalStrength}%` }" :class="getSignalClass(item.signalStrength)"></div>
-                    </div>
-                  </span>
-                </div>
-                <div v-if="item.active !== undefined" class="usage-detail-item">
-                  <span class="detail-label">Status:</span>
-                  <span class="detail-value" :class="item.active ? 'text-success' : ''">
-                    {{ item.active ? 'Active' : 'Inactive' }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Transfer statistics -->
-              <div class="usage-statistics">
-                <div class="usage-stat-header">Transfer Statistics</div>
-                <div class="statistics-grid">
-                  <div class="stat-item">
-                    <div class="stat-label">Total Downloaded</div>
-                    <div class="stat-value download-value">{{ formatBytes(item.rxBytes) }}</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-label">Total Uploaded</div>
-                    <div class="stat-value upload-value">{{ formatBytes(item.txBytes) }}</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-label">RX Errors</div>
-                    <div class="stat-value">{{ item.rxErrors }}</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-label">TX Errors</div>
-                    <div class="stat-value">{{ item.txErrors }}</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-label">RX Dropped</div>
-                    <div class="stat-value">{{ item.rxDropped }}</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-label">TX Dropped</div>
-                    <div class="stat-value">{{ item.txDropped }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Packet statistics -->
-              <div class="usage-packet-stats">
-                <div class="usage-stat-header">Packet Statistics</div>
-                <div class="packet-stats-grid">
-                  <div class="stat-item">
-                    <div class="stat-label">RX Packets</div>
-                    <div class="stat-value">{{ item.rxPackets?.toLocaleString() || '0' }}</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-label">TX Packets</div>
-                    <div class="stat-value">{{ item.txPackets?.toLocaleString() || '0' }}</div>
-                  </div>
-                </div>
-              </div>
+            <div class="priority-actions">
+              <button
+                @click="movePriority(connection.id, 'up')"
+                :disabled="index === 0"
+                class="priority-button"
+                :class="{ 'disabled': index === 0 }"
+              >
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              <button
+                @click="movePriority(connection.id, 'down')"
+                :disabled="index === routingPriorities.length - 1"
+                class="priority-button"
+                :class="{ 'disabled': index === routingPriorities.length - 1 }"
+              >
+                <i class="fas fa-arrow-down"></i>
+              </button>
             </div>
           </div>
 
+          <div v-if="routingPriorities.length === 0" class="empty-state">
+            <div class="empty-message">
+              <i class="fas fa-random"></i>
+              <p>No active connections to prioritize</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Data Usage Section -->
+      <div v-if="activeSection === 'usage'" class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Data Usage</h2>
+        </div>
+
+        <div v-if="socketError" class="error-message-small">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>{{ socketError }}</p>
+        </div>
+
+        <div class="usage-container">
           <div v-if="usageData.length === 0" class="empty-state">
             <div class="empty-message">
               <i class="fas fa-chart-bar"></i>
-              <p>No data usage information available</p>
+              <p>Waiting for network data...</p>
+            </div>
+          </div>
+
+          <div class="usage-details">
+            <div
+              v-for="(item, idx) in usageData"
+              :key="item.name"
+              class="usage-item"
+              :class="{ 'expanded': expandedInterfaces[idx] }"
+              @click="toggleInterface(idx)"
+            >
+              <!-- Always visible header with basic info -->
+              <div class="usage-item-header">
+                <div class="usage-info">
+                  <span class="usage-name">{{ item.name }}</span>
+                  <span class="usage-interface">({{ item.interface }})</span>
+                  <span class="interface-type capitalize">{{ item.type }}</span>
+                </div>
+                <div class="usage-rates">
+                  <span class="download-value">↓ {{ item.dataDown.toFixed(1) }}</span>
+                  <span class="rate-separator">/</span>
+                  <span class="upload-value">↑ {{ item.dataUp.toFixed(1) }}</span>
+                  <span class="rate-unit">Mbps</span>
+                  <i class="fas" :class="expandedInterfaces[idx] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+              </div>
+
+              <!-- Basic rate bars - always visible -->
+              <div class="usage-bars-compact">
+                <div class="rate-bar-container">
+                  <div class="rate-bar-fill download"
+                       :style="{ width: calculateBarWidth(item.dataDown) }"></div>
+                </div>
+                <div class="rate-bar-container">
+                  <div class="rate-bar-fill upload"
+                       :style="{ width: calculateBarWidth(item.dataUp) }"></div>
+                </div>
+              </div>
+
+              <!-- Expanded details - only visible when expanded -->
+              <div v-if="expandedInterfaces[idx]" class="usage-details-expanded">
+                <!-- Connection details grid -->
+                <div class="usage-details-grid">
+                  <div v-if="item.ipAddress" class="usage-detail-item">
+                    <span class="detail-label">IP Address:</span>
+                    <span class="detail-value">{{ item.ipAddress }}</span>
+                  </div>
+                  <div v-if="item.type === 'wifi' && item.signalStrength" class="usage-detail-item">
+                    <span class="detail-label">Signal Strength:</span>
+                    <span class="detail-value">
+                      <div class="signal-container">
+                        <div class="signal-bar" :style="{ width: `${item.signalStrength}%` }" :class="getSignalClass(item.signalStrength)"></div>
+                      </div>
+                    </span>
+                  </div>
+                  <div v-if="item.active !== undefined" class="usage-detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value" :class="item.active ? 'text-success' : ''">
+                      {{ item.active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Transfer statistics -->
+                <div class="usage-statistics">
+                  <div class="usage-stat-header">Transfer Statistics</div>
+                  <div class="statistics-grid">
+                    <div class="stat-item">
+                      <div class="stat-label">Total Downloaded</div>
+                      <div class="stat-value download-value">{{ formatBytes(item.rxBytes) }}</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">Total Uploaded</div>
+                      <div class="stat-value upload-value">{{ formatBytes(item.txBytes) }}</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">RX Errors</div>
+                      <div class="stat-value">{{ item.rxErrors }}</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">TX Errors</div>
+                      <div class="stat-value">{{ item.txErrors }}</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">RX Dropped</div>
+                      <div class="stat-value">{{ item.rxDropped }}</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">TX Dropped</div>
+                      <div class="stat-value">{{ item.txDropped }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Packet statistics -->
+                <div class="usage-packet-stats">
+                  <div class="usage-stat-header">Packet Statistics</div>
+                  <div class="packet-stats-grid">
+                    <div class="stat-item">
+                      <div class="stat-label">RX Packets</div>
+                      <div class="stat-value">{{ item.rxPackets?.toLocaleString() || '0' }}</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">TX Packets</div>
+                      <div class="stat-value">{{ item.txPackets?.toLocaleString() || '0' }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="usageData.length === 0" class="empty-state">
+              <div class="empty-message">
+                <i class="fas fa-chart-bar"></i>
+                <p>No data usage information available</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Connection Form Dialog -->
-    <div v-if="showConnectionForm" class="dialog-overlay">
-      <div class="dialog-container">
-        <div class="dialog-header">
-          <h3 class="dialog-title">{{ isEditingConnection ? 'Edit' : 'Add' }} Connection</h3>
-          <button @click="closeConnectionForm" class="close-button">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="dialog-content">
-          <div v-if="!connectionType" class="connection-type-selector">
-            <div class="connection-type-title">Select Connection Type</div>
-            <div class="connection-type-options">
-              <button 
-                @click="selectConnectionType('wifi')" 
-                class="connection-type-button"
-              >
-                <i class="fas fa-wifi"></i>
-                <span>WiFi</span>
-              </button>
-              <button 
-                @click="selectConnectionType('ethernet')" 
-                class="connection-type-button"
-              >
-                <i class="fas fa-network-wired"></i>
-                <span>Ethernet</span>
-              </button>
-              <!-- LTE connection type removed - LTE handled in dedicated tab -->
-            </div>
+      <!-- Connection Form Dialog -->
+      <div v-if="showConnectionForm" class="dialog-overlay">
+        <div class="dialog-container">
+          <div class="dialog-header">
+            <h3 class="dialog-title">{{ isEditingConnection ? 'Edit' : 'Add' }} Connection</h3>
+            <button @click="closeConnectionForm" class="close-button">
+              <i class="fas fa-times"></i>
+            </button>
           </div>
 
-          <!-- WiFi Connection Form -->
-          <form v-if="connectionType === 'wifi'" @submit.prevent="saveConnection" class="connection-form">
-            <div class="form-group">
-              <label for="wifi-mode">Connection Mode:</label>
-              <div class="radio-group">
-                <label class="radio-option">
-                  <input type="radio" v-model="newConnection.mode" value="infrastructure" id="mode-client">
-                  <span>Station (Client)</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" v-model="newConnection.mode" value="ap" id="mode-ap">
-                  <span>Access Point (Hotspot)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Available WiFi Networks Section (only for infrastructure mode) -->
-            <div v-if="newConnection.mode === 'infrastructure'" class="wifi-scan-container">
-              <div class="wifi-scan-header">
-                <h3>Available Networks</h3>
-                <button type="button" @click="scanWifiFromConnectionForm" class="wifi-scan-button">
-                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': scanning }"></i>
-                  Rescan
-                </button>
-              </div>
-
-              <div class="wifi-networks-list">
-                <div v-if="scanning && availableWifiNetworks.length === 0" class="scanning-overlay">
-                  <div class="spinner"></div>
-                  <p>Scanning for networks...</p>
-                </div>
-
-                <div v-if="availableWifiNetworks.length === 0 && !scanning" class="empty-networks">
+          <div class="dialog-content">
+            <div v-if="!connectionType" class="connection-type-selector">
+              <div class="connection-type-title">Select Connection Type</div>
+              <div class="connection-type-options">
+                <button
+                  @click="selectConnectionType('wifi')"
+                  class="connection-type-button"
+                >
                   <i class="fas fa-wifi"></i>
-                  <p>No WiFi networks found</p>
+                  <span>WiFi</span>
+                </button>
+                <button
+                  @click="selectConnectionType('ethernet')"
+                  class="connection-type-button"
+                >
+                  <i class="fas fa-network-wired"></i>
+                  <span>Ethernet</span>
+                </button>
+                <!-- LTE connection type removed - LTE handled in dedicated tab -->
+              </div>
+            </div>
+
+            <!-- WiFi Connection Form -->
+            <form v-if="connectionType === 'wifi'" @submit.prevent="saveConnection" class="connection-form">
+              <div class="form-group">
+                <label for="wifi-mode">Connection Mode:</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" v-model="newConnection.mode" value="infrastructure" id="mode-client">
+                    <span>Station (Client)</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" v-model="newConnection.mode" value="ap" id="mode-ap">
+                    <span>Access Point (Hotspot)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Available WiFi Networks Section (only for infrastructure mode) -->
+              <div v-if="newConnection.mode === 'infrastructure'" class="wifi-scan-container">
+                <div class="wifi-scan-header">
+                  <h3>Available Networks</h3>
+                  <button type="button" @click="scanWifiFromConnectionForm" class="wifi-scan-button">
+                    <i class="fas fa-sync-alt" :class="{ 'fa-spin': scanning }"></i>
+                    Rescan
+                  </button>
                 </div>
 
-                <div
-                  v-for="network in availableWifiNetworks"
-                  :key="network.ssid"
-                  class="wifi-network-item form-wifi-item"
-                  :class="{ 'selected': newConnection.ssid === network.ssid }"
-                  @click="selectWifiNetwork(network)"
-                >
-                  <div class="wifi-info">
-                    <i class="fas fa-wifi" :class="getSignalClass(network.signalStrength)"></i>
-                    <div class="wifi-details">
-                      <span class="wifi-name">{{ network.ssid }}</span>
-                      <span v-if="network.secured" class="security-badge">Secured</span>
+                <div class="wifi-networks-list">
+                  <div v-if="scanning && availableWifiNetworks.length === 0" class="scanning-overlay">
+                    <div class="spinner"></div>
+                    <p>Scanning for networks...</p>
+                  </div>
+
+                  <div v-if="availableWifiNetworks.length === 0 && !scanning" class="empty-networks">
+                    <i class="fas fa-wifi"></i>
+                    <p>No WiFi networks found</p>
+                  </div>
+
+                  <div
+                    v-for="network in availableWifiNetworks"
+                    :key="network.ssid"
+                    class="wifi-network-item form-wifi-item"
+                    :class="{ 'selected': newConnection.ssid === network.ssid }"
+                    @click="selectWifiNetwork(network)"
+                  >
+                    <div class="wifi-info">
+                      <i class="fas fa-wifi" :class="getSignalClass(network.signalStrength)"></i>
+                      <div class="wifi-details">
+                        <span class="wifi-name">{{ network.ssid }}</span>
+                        <span v-if="network.secured" class="security-badge">Secured</span>
+                      </div>
+                    </div>
+
+                    <div class="wifi-signal">
+                      <div class="signal-container">
+                        <div class="signal-bar" :style="{ width: `${network.signalStrength}%` }" :class="getSignalClass(network.signalStrength)"></div>
+                      </div>
                     </div>
                   </div>
-
-                  <div class="wifi-signal">
-                    <div class="signal-container">
-                      <div class="signal-bar" :style="{ width: `${network.signalStrength}%` }" :class="getSignalClass(network.signalStrength)"></div>
-                    </div>
-                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Manual SSID input (for both modes) -->
-            <div class="form-group">
-              <label for="wifi-ssid">SSID:</label>
-              <input type="text" id="wifi-ssid" v-model="newConnection.ssid" required>
-            </div>
-
-            <div class="form-group">
-              <label for="wifi-password">Password:</label>
-              <div class="password-input">
-                <input 
-                  :type="passwordVisible ? 'text' : 'password'" 
-                  id="wifi-password" 
-                  v-model="newConnection.password" 
-                  :required="newConnection.mode === 'ap' || selectedNetworkSecured"
-                >
-                <button 
-                  type="button" 
-                  @click="togglePasswordVisibility" 
-                  class="password-toggle"
-                >
-                  <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                </button>
-              </div>
-            </div>
-
-            <div v-if="newConnection.mode === 'infrastructure'" class="form-group">
-              <span class="label-text">Auto-Connect:</span>
-              <div class="toggle-switch">
-                <input type="checkbox" id="wifi-autoconnect" v-model="newConnection.autoconnect">
-                <label for="wifi-autoconnect" class="toggle-slider"></label>
-              </div>
-            </div>
-
-            <div class="form-buttons">
-              <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
-              <button type="submit" class="submit-button">
-                {{ isEditingConnection ? 'Update' : 'Add' }} Connection
-              </button>
-            </div>
-          </form>
-
-          <!-- Ethernet Connection Form -->
-          <form v-if="connectionType === 'ethernet'" @submit.prevent="saveConnection" class="connection-form">
-            <div class="form-group">
-              <label for="ethernet-name">Connection Name:</label>
-              <input type="text" id="ethernet-name" v-model="newConnection.name" required>
-            </div>
-
-            <div class="form-group">
-              <label for="ethernet-method">IP Configuration:</label>
-              <select id="ethernet-method" v-model="newConnection.ipMethod">
-                <option value="auto">Automatic (DHCP)</option>
-                <option value="manual">Manual</option>
-              </select>
-            </div>
-
-            <div v-if="newConnection.ipMethod === 'manual'" class="manual-ip-section">
+              <!-- Manual SSID input (for both modes) -->
               <div class="form-group">
-                <label for="ethernet-ip">IP Address:</label>
-                <input type="text" id="ethernet-ip" v-model="newConnection.ipAddress" placeholder="192.168.1.100">
+                <label for="wifi-ssid">SSID:</label>
+                <input type="text" id="wifi-ssid" v-model="newConnection.ssid" required>
               </div>
 
               <div class="form-group">
-                <label for="ethernet-gateway">Gateway:</label>
-                <input type="text" id="ethernet-gateway" v-model="newConnection.gateway" placeholder="192.168.1.1">
-              </div>
-
-              <div class="form-group">
-                <label for="ethernet-prefix">Prefix Length:</label>
-                <input type="number" id="ethernet-prefix" v-model="newConnection.prefix" min="1" max="32" placeholder="24">
-              </div>
-
-              <div class="form-group">
-                <label for="ethernet-dns1">DNS Server 1:</label>
-                <input type="text" id="ethernet-dns1" v-model="newConnection.dns1" placeholder="8.8.8.8">
-              </div>
-
-              <div class="form-group">
-                <label for="ethernet-dns2">DNS Server 2:</label>
-                <input type="text" id="ethernet-dns2" v-model="newConnection.dns2" placeholder="8.8.4.4">
-              </div>
-            </div>
-
-            <div class="form-buttons">
-              <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
-              <button type="submit" class="submit-button">
-                {{ isEditingConnection ? 'Update' : 'Add' }} Connection
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- WiFi Password Dialog -->
-    <div v-if="showWifiPasswordDialog" class="dialog-overlay">
-      <div class="dialog-container wifi-password-dialog">
-        <div class="dialog-header">
-          <h3 class="dialog-title">Connect to {{ selectedWifiNetwork.ssid }}</h3>
-          <button @click="closeWifiPasswordDialog" class="close-button">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="dialog-content">
-          <form @submit.prevent="connectToWifiWithPassword" class="wifi-password-form">
-            <div class="form-group">
-              <label for="wifi-connect-password">Password:</label>
-              <div class="password-input">
-                <input 
-                  :type="passwordVisible ? 'text' : 'password'" 
-                  id="wifi-connect-password" 
-                  v-model="wifiPassword" 
-                  required
-                >
-                <button 
-                  type="button" 
-                  @click="togglePasswordVisibility" 
-                  class="password-toggle"
-                >
-                  <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="form-buttons">
-              <button type="button" @click="closeWifiPasswordDialog" class="cancel-button">Cancel</button>
-              <button type="submit" class="submit-button">Connect</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- LTE Modem Section -->
-    <div v-if="activeSection === 'lte'" class="section-container">
-      <div class="section-header">
-        <h2 class="section-title">LTE Modem</h2>
-        <div class="header-actions">
-          <button @click="refreshLteStatus" class="refresh-button" :disabled="refreshingLte">
-            <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingLte }"></i>
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <div v-if="loadingLte" class="loading-container">
-        <div class="loading-spinner"></div>
-        <span>Loading modem information...</span>
-      </div>
-      
-      <div v-else-if="lteStatus.status === 'not_available'" class="error-container">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>LTE functionality is only available on Jetson platform.</span>
-      </div>
-      
-      <div v-else-if="lteStatus.status === 'not_found'" class="error-container">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>No LTE modem detected. Please check your hardware connection.</span>
-      </div>
-      
-      <div v-else-if="lteStatus.status === 'error'" class="error-container">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>{{ lteStatus.message || 'Error retrieving LTE status' }}</span>
-      </div>
-      
-      <div v-else class="lte-content">
-        <div class="lte-status-card">
-          <div class="lte-status-header">
-            <h3>Modem Status</h3>
-            <div class="status-badge" :class="lteStatus.state">
-              {{ lteStatus.state || 'unknown' }}
-            </div>
-          </div>
-          
-          <div class="lte-info-grid">
-            <div class="lte-info-item">
-              <span class="info-label">Manufacturer:</span>
-              <span class="info-value">{{ lteStatus.manufacturer || '-' }}</span>
-            </div>
-            <div class="lte-info-item">
-              <span class="info-label">Model:</span>
-              <span class="info-value">{{ lteStatus.model || '-' }}</span>
-            </div>
-            <div class="lte-info-item">
-              <span class="info-label">IMEI:</span>
-              <span class="info-value">{{ lteStatus.imei || '-' }}</span>
-            </div>
-            <div class="lte-info-item">
-              <span class="info-label">Carrier:</span>
-              <span class="info-value">{{ lteStatus.operatorName || '-' }}</span>
-            </div>
-            <div class="lte-info-item">
-              <span class="info-label">Signal Strength:</span>
-              <span class="info-value">
-                <div class="signal-container">
-                  <div class="signal-bar" 
-                       :style="{ width: `${lteStatus.signalStrength || 0}%` }" 
-                       :class="getSignalClass(lteStatus.signalStrength)">
-                  </div>
+                <label for="wifi-password">Password:</label>
+                <div class="password-input">
+                  <input
+                    :type="passwordVisible ? 'text' : 'password'"
+                    id="wifi-password"
+                    v-model="newConnection.password"
+                    :required="newConnection.mode === 'ap' || selectedNetworkSecured"
+                  >
+                  <button
+                    type="button"
+                    @click="togglePasswordVisibility"
+                    class="password-toggle"
+                  >
+                    <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                  </button>
                 </div>
-                {{ lteStatus.signalStrength || 0 }}%
-              </span>
-            </div>
-            <div class="lte-info-item">
-              <span class="info-label">APN:</span>
-              <span class="info-value">{{ lteStatus.apn || lteStatus.defaultApn || '-' }}</span>
-            </div>
+              </div>
+
+              <div v-if="newConnection.mode === 'infrastructure'" class="form-group">
+                <span class="label-text">Auto-Connect:</span>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="wifi-autoconnect" v-model="newConnection.autoconnect">
+                  <label for="wifi-autoconnect" class="toggle-slider"></label>
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
+                <button type="submit" class="submit-button">
+                  {{ isEditingConnection ? 'Update' : 'Add' }} Connection
+                </button>
+              </div>
+            </form>
+
+            <!-- Ethernet Connection Form -->
+            <form v-if="connectionType === 'ethernet'" @submit.prevent="saveConnection" class="connection-form">
+              <div class="form-group">
+                <label for="ethernet-name">Connection Name:</label>
+                <input type="text" id="ethernet-name" v-model="newConnection.name" required>
+              </div>
+
+              <div class="form-group">
+                <label for="ethernet-method">IP Configuration:</label>
+                <select id="ethernet-method" v-model="newConnection.ipMethod">
+                  <option value="auto">Automatic (DHCP)</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </div>
+
+              <div v-if="newConnection.ipMethod === 'manual'" class="manual-ip-section">
+                <div class="form-group">
+                  <label for="ethernet-ip">IP Address:</label>
+                  <input type="text" id="ethernet-ip" v-model="newConnection.ipAddress" placeholder="192.168.1.100">
+                </div>
+
+                <div class="form-group">
+                  <label for="ethernet-gateway">Gateway:</label>
+                  <input type="text" id="ethernet-gateway" v-model="newConnection.gateway" placeholder="192.168.1.1">
+                </div>
+
+                <div class="form-group">
+                  <label for="ethernet-prefix">Prefix Length:</label>
+                  <input type="number" id="ethernet-prefix" v-model="newConnection.prefix" min="1" max="32" placeholder="24">
+                </div>
+
+                <div class="form-group">
+                  <label for="ethernet-dns1">DNS Server 1:</label>
+                  <input type="text" id="ethernet-dns1" v-model="newConnection.dns1" placeholder="8.8.8.8">
+                </div>
+
+                <div class="form-group">
+                  <label for="ethernet-dns2">DNS Server 2:</label>
+                  <input type="text" id="ethernet-dns2" v-model="newConnection.dns2" placeholder="8.8.4.4">
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
+                <button type="submit" class="submit-button">
+                  {{ isEditingConnection ? 'Update' : 'Add' }} Connection
+                </button>
+              </div>
+            </form>
           </div>
-          
-          <div class="lte-actions">
-            <button v-if="lteStatus.state !== 'connected'" 
-                    @click="connectLte" 
-                    class="connect-button">
-              <i class="fas fa-plug"></i>
-              Connect
+        </div>
+      </div>
+
+      <!-- WiFi Password Dialog -->
+      <div v-if="showWifiPasswordDialog" class="dialog-overlay">
+        <div class="dialog-container wifi-password-dialog">
+          <div class="dialog-header">
+            <h3 class="dialog-title">Connect to {{ selectedWifiNetwork.ssid }}</h3>
+            <button @click="closeWifiPasswordDialog" class="close-button">
+              <i class="fas fa-times"></i>
             </button>
-            <button v-else 
-                    @click="disconnectLte" 
-                    class="disconnect-button">
-              <i class="fas fa-unlink"></i>
-              Disconnect
+          </div>
+
+          <div class="dialog-content">
+            <form @submit.prevent="connectToWifiWithPassword" class="wifi-password-form">
+              <div class="form-group">
+                <label for="wifi-connect-password">Password:</label>
+                <div class="password-input">
+                  <input
+                    :type="passwordVisible ? 'text' : 'password'"
+                    id="wifi-connect-password"
+                    v-model="wifiPassword"
+                    required
+                  >
+                  <button
+                    type="button"
+                    @click="togglePasswordVisibility"
+                    class="password-toggle"
+                  >
+                    <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="button" @click="closeWifiPasswordDialog" class="cancel-button">Cancel</button>
+                <button type="submit" class="submit-button">Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- LTE Modem Section -->
+      <div v-if="activeSection === 'lte'" class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">LTE Modem</h2>
+          <div class="header-actions">
+            <button @click="refreshLteStatus" class="refresh-button" :disabled="refreshingLte">
+              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingLte }"></i>
+              Refresh
             </button>
           </div>
         </div>
 
-        <div v-if="lteStatus.state === 'connected' && lteStatus.interface" class="lte-connected-info">
-          <div class="lte-interface-card">
-            <h3>Network Interface</h3>
-            
+        <div v-if="loadingLte" class="loading-container">
+          <div class="loading-spinner"></div>
+          <span>Loading modem information...</span>
+        </div>
+
+        <div v-else-if="lteStatus.status === 'not_available'" class="error-container">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>LTE functionality is only available on Jetson platform.</span>
+        </div>
+
+        <div v-else-if="lteStatus.status === 'not_found'" class="error-container">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>No LTE modem detected. Please check your hardware connection.</span>
+        </div>
+
+        <div v-else-if="lteStatus.status === 'error'" class="error-container">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ lteStatus.message || 'Error retrieving LTE status' }}</span>
+        </div>
+
+        <div v-else class="lte-content">
+          <div class="lte-status-card">
+            <div class="lte-status-header">
+              <h3>Modem Status</h3>
+              <div class="status-badge" :class="lteStatus.state">
+                {{ lteStatus.state || 'unknown' }}
+              </div>
+            </div>
+
             <div class="lte-info-grid">
               <div class="lte-info-item">
-                <span class="info-label">Interface:</span>
-                <span class="info-value">{{ lteStatus.interface }}</span>
+                <span class="info-label">Manufacturer:</span>
+                <span class="info-value">{{ lteStatus.manufacturer || '-' }}</span>
               </div>
               <div class="lte-info-item">
-                <span class="info-label">Status:</span>
-                <span class="info-value status-badge" :class="lteStatus.interfaceState === 'up' ? 'active' : 'inactive'">
-                  {{ lteStatus.interfaceState === 'up' ? 'UP' : 'DOWN' }}
+                <span class="info-label">Model:</span>
+                <span class="info-value">{{ lteStatus.model || '-' }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">IMEI:</span>
+                <span class="info-value">{{ lteStatus.imei || '-' }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">Carrier:</span>
+                <span class="info-value">{{ lteStatus.operatorName || '-' }}</span>
+              </div>
+              <div class="lte-info-item">
+                <span class="info-label">Signal Strength:</span>
+                <span class="info-value">
+                  <div class="signal-container">
+                    <div class="signal-bar"
+                         :style="{ width: `${lteStatus.signalStrength || 0}%` }"
+                         :class="getSignalClass(lteStatus.signalStrength)">
+                    </div>
+                  </div>
+                  {{ lteStatus.signalStrength || 0 }}%
                 </span>
               </div>
               <div class="lte-info-item">
-                <span class="info-label">IP Address:</span>
-                <span class="info-value">{{ lteStatus.ipAddress || '-' }}</span>
+                <span class="info-label">APN:</span>
+                <span class="info-value">{{ lteStatus.apn || lteStatus.defaultApn || '-' }}</span>
               </div>
-              <div class="lte-info-item">
-                <span class="info-label">Gateway:</span>
-                <span class="info-value">{{ lteStatus.gateway || '-' }}</span>
-              </div>
-              <div class="lte-info-item">
-                <span class="info-label">Prefix:</span>
-                <span class="info-value">{{ lteStatus.prefix || '-' }}</span>
-              </div>
-              <div class="lte-info-item">
-                <span class="info-label">MTU:</span>
-                <span class="info-value">{{ lteStatus.mtu || '1500' }}</span>
-              </div>
+            </div>
+
+            <div class="lte-actions">
+              <button v-if="lteStatus.state !== 'connected'"
+                      @click="connectLte"
+                      class="connect-button">
+                <i class="fas fa-plug"></i>
+                Connect
+              </button>
+              <button v-else
+                      @click="disconnectLte"
+                      class="disconnect-button">
+                <i class="fas fa-unlink"></i>
+                Disconnect
+              </button>
             </div>
           </div>
-          
-          <div class="lte-dns-card">
-            <h3>DNS Servers</h3>
-            <div v-if="lteStatus.dns && lteStatus.dns.length" class="dns-server-list">
-              <div v-for="(dns, index) in lteStatus.dns" :key="index" class="dns-server-item">
-                <i class="fas fa-server"></i> {{ dns }}
+
+          <div v-if="lteStatus.state === 'connected' && lteStatus.interface" class="lte-connected-info">
+            <div class="lte-interface-card">
+              <h3>Network Interface</h3>
+
+              <div class="lte-info-grid">
+                <div class="lte-info-item">
+                  <span class="info-label">Interface:</span>
+                  <span class="info-value">{{ lteStatus.interface }}</span>
+                </div>
+                <div class="lte-info-item">
+                  <span class="info-label">Status:</span>
+                  <span class="info-value status-badge" :class="lteStatus.interfaceState === 'up' ? 'active' : 'inactive'">
+                    {{ lteStatus.interfaceState === 'up' ? 'UP' : 'DOWN' }}
+                  </span>
+                </div>
+                <div class="lte-info-item">
+                  <span class="info-label">IP Address:</span>
+                  <span class="info-value">{{ lteStatus.ipAddress || '-' }}</span>
+                </div>
+                <div class="lte-info-item">
+                  <span class="info-label">Gateway:</span>
+                  <span class="info-value">{{ lteStatus.gateway || '-' }}</span>
+                </div>
+                <div class="lte-info-item">
+                  <span class="info-label">Prefix:</span>
+                  <span class="info-value">{{ lteStatus.prefix || '-' }}</span>
+                </div>
+                <div class="lte-info-item">
+                  <span class="info-label">MTU:</span>
+                  <span class="info-value">{{ lteStatus.mtu || '1500' }}</span>
+                </div>
               </div>
             </div>
-            <div v-else class="empty-dns">
-              <span>No DNS servers configured</span>
+
+            <div class="lte-dns-card">
+              <h3>DNS Servers</h3>
+              <div v-if="lteStatus.dns && lteStatus.dns.length" class="dns-server-list">
+                <div v-for="(dns, index) in lteStatus.dns" :key="index" class="dns-server-item">
+                  <i class="fas fa-server"></i> {{ dns }}
+                </div>
+              </div>
+              <div v-else class="empty-dns">
+                <span>No DNS servers configured</span>
+              </div>
             </div>
           </div>
         </div>
