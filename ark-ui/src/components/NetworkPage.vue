@@ -88,7 +88,7 @@
                   <div v-if="connection.type !== 'ethernet'" class="signal-container">
                     <div class="signal-bar" :style="{ width: `${connection.signalStrength}%` }" :class="getSignalClass(connection.signalStrength)"></div>
                   </div>
-                  <span v-else class="wired-signal">Wired (100%)</span>
+                  <span v-else class="wired-signal"> -------- </span>
                 </td>
                 <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
                 <td class="actions">
@@ -1546,18 +1546,19 @@ export default {
   box-sizing: border-box;
   overflow-x: hidden;
   height: 100%;
+  max-height: 100vh;
 }
 
 /* Add a container for the tabs to ensure consistent width */
 .tab-content-wrapper {
   width: 100%;
   min-width: 100%; /* Prevent shrinking */
-  min-height: 500px;
-  height: calc(100vh - 150px); /* Account for header, tabs, and padding */
+  height: calc(100vh - 180px); /* Account for header, tabs, and padding */
   position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Ensure all section containers have a proper width */
@@ -1570,8 +1571,8 @@ export default {
   padding: 20px;
   box-sizing: border-box;
   min-height: 500px; 
-  max-height: calc(100vh - 150px); /* Account for header, tabs and padding */
-  height: calc(100vh - 150px);
+/*  max-height: calc(100vh - 180px);*/
+/*  height: calc(100vh - 180px);*/
   overflow-y: auto;  /* Enable vertical scrolling */
   overflow-x: hidden; /* Prevent horizontal scrolling */
   display: flex;
@@ -1733,10 +1734,23 @@ export default {
 }
 
 /* Tables */
-.table-container {
+/*.table-container {
+  display: flex;
   overflow-x: auto;
   overflow-y: auto;
   max-height: 400px;
+  border-radius: 4px;
+  border: 1px solid var(--ark-color-black-shadow);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ark-color-black-shadow) transparent;
+}*/
+.table-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Take available space */
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: none; /* Remove fixed max-height */
   border-radius: 4px;
   border: 1px solid var(--ark-color-black-shadow);
   scrollbar-width: thin;
@@ -1871,7 +1885,7 @@ export default {
 }
 
 .wired-signal {
-  color: var(--ark-color-green);
+  color: var(--ark-color-black);
   font-weight: 500;
 }
 
@@ -3038,11 +3052,13 @@ input:checked + .toggle-slider:before {
 }
 
 .status-badge.active {
+  color: var(--ark-color-white);
   background-color: var(--ark-color-green);
 }
 
 .status-badge.inactive {
-  background-color: var(--ark-color-red);
+  color: var(--ark-color-white);
+  background-color: var(--ark-color-black-shadow);
 }
 
 @media (max-width: 768px) {

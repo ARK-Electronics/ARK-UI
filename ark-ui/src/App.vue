@@ -78,8 +78,6 @@ export default {
   font-family: 'Roboto', sans-serif;
   color: var(--ark-color-black); /* Should be your black color */
   background-color: var(--ark-color-white); /* Your specified white color */
-  height: 100vh;
-  overflow: hidden; /* Contain content within viewport */
 }
 
 .sidebar {
@@ -133,7 +131,6 @@ export default {
 .content {
   flex-grow: 1;
   padding-left: 4vh;
-  height: 100vh; /* Full height */
   overflow-y: auto; /* Enable scrolling */
   color: var(--ark-color-black-bold); /* Text color black */
   background-color: var(--ark-color-white); /* Light gray background for the content area, change to white if necessary */
