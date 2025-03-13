@@ -175,7 +175,7 @@
                     <span class="detail-label">IP Address:</span>
                     <span class="detail-value">{{ item.ipAddress }}</span>
                   </div>
-                  <div v-if="item.type === 'wifi' && item.signalStrength" class="usage-detail-item">
+                  <div v-if="item.type !== 'ethernet' && item.signalStrength" class="usage-detail-item">
                     <span class="detail-label">Signal Strength:</span>
                     <span class="detail-value">
                       <div class="signal-container">
