@@ -2,10 +2,6 @@ import axios from 'axios';
 
 // Define all API endpoints centrally
 const ENDPOINTS = {
-  // Test endpoints (for development debugging)
-  test: `/network/test`,
-  debugRoutes: `/network/debug/routes`,
-
   // Connection management
   connections: `/network/connections`,
   connectionById: (id) => `/network/connections/${id}`,
@@ -32,16 +28,6 @@ const ENDPOINTS = {
 };
 
 export default {
-  // Test endpoints
-  async testApi() {
-    return axios.get(ENDPOINTS.test);
-  },
-
-  async getDebugRoutes() {
-    return axios.get(ENDPOINTS.debugRoutes);
-  },
-
-  // Current connections
   async getConnections() {
     return axios.get(ENDPOINTS.connections);
   },
