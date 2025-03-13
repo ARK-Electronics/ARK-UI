@@ -14,13 +14,6 @@
       </button>
       <button 
         class="tab-button"
-        :class="{ 'active': activeSection === 'priorities' }"
-        @click="activeSection = 'priorities'"
-      >
-        Routing
-      </button>
-      <button 
-        class="tab-button"
         :class="{ 'active': activeSection === 'usage' }"
         @click="activeSection = 'usage'"
       >
@@ -88,7 +81,6 @@
                   <div v-if="connection.type !== 'ethernet'" class="signal-container">
                     <div class="signal-bar" :style="{ width: `${connection.signalStrength}%` }" :class="getSignalClass(connection.signalStrength)"></div>
                   </div>
-                  <span v-else class="wired-signal"> -------- </span>
                 </td>
                 <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
                 <td class="actions">
@@ -118,69 +110,6 @@
             </tbody>
           </table>
         </div>
-      </div>
-
-      <!-- Routing Priorities Section -->
-      <div v-if="activeSection === 'priorities'" class="section-container">
-        <div class="section-header">
-          <h2 class="section-title">Priorities</h2>
-          <div class="header-actions">
-            <button @click="fetchRoutingPriorities" class="refresh-button">
-              <i class="fas fa-sync-alt"></i>
-              Refresh
-            </button>
-            <button
-              @click="savePriorities"
-              class="save-button"
-              :disabled="!prioritiesChanged"
-            >
-              <i class="fas fa-save"></i>
-              Save Changes
-            </button>
-          </div>
-        </div>
-
-        <div class="priorities-container">
-          <div
-            v-for="(connection, index) in routingPriorities"
-            :key="connection.id"
-            class="priority-item"
-          >
-            <div class="priority-info">
-              <div class="priority-badge">{{ connection.priority }}</div>
-              <span v-html="getConnectionIcon(connection.type, 'active')"></span>
-              <span class="priority-name">{{ connection.name }}</span>
-              <span class="type-badge">{{ connection.type }}</span>
-            </div>
-
-            <div class="priority-actions">
-              <button
-                @click="movePriority(connection.id, 'up')"
-                :disabled="index === 0"
-                class="priority-button"
-                :class="{ 'disabled': index === 0 }"
-              >
-                <i class="fas fa-arrow-up"></i>
-              </button>
-              <button
-                @click="movePriority(connection.id, 'down')"
-                :disabled="index === routingPriorities.length - 1"
-                class="priority-button"
-                :class="{ 'disabled': index === routingPriorities.length - 1 }"
-              >
-                <i class="fas fa-arrow-down"></i>
-              </button>
-            </div>
-          </div>
-
-          <div v-if="routingPriorities.length === 0" class="empty-state">
-            <div class="empty-message">
-              <i class="fas fa-random"></i>
-              <p>No active connections to prioritize</p>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <!-- Data Usage Section -->
@@ -706,8 +635,6 @@ export default {
       scanning: false,
       connections: [],
       availableWifiNetworks: [],
-      routingPriorities: [],
-      prioritiesChanged: false,
 
       // Network usage data
       usageData: [],
@@ -762,17 +689,10 @@ export default {
       // UI states
       loadingConnections: false,
       loadingWifi: false,
-      loadingRouting: false
     };
   },
   
   computed: {
-    // Get the highest priority active connection (active route)
-    activeRoute() {
-      if (this.routingPriorities.length === 0) return null;
-      return this.routingPriorities[0];
-    },
-    
     // Calculate the maximum data rate for scaling the usage bars
     maxDataRate() {
       if (this.usageData.length === 0) return 100;
@@ -851,9 +771,6 @@ export default {
       switch (section) {
         case 'current':
           this.fetchConnections(showLoading);
-          break;
-        case 'priorities':
-          this.fetchRoutingPriorities(showLoading);
           break;
         case 'usage':
           // For usage tab, we only need to connect to WebSocket
@@ -968,32 +885,6 @@ export default {
       }
     },
 
-    async fetchRoutingPriorities(showLoading = true) {
-      if (showLoading) {
-        this.loadingRouting = true;
-      }
-
-      try {
-        const response = await ConnectionsService.getRoutingPriorities();
-
-        // Only replace the array if there are actual changes
-        const currentJSON = JSON.stringify(this.routingPriorities);
-        const newJSON = JSON.stringify(response.data);
-
-        if (currentJSON !== newJSON) {
-          this.routingPriorities = response.data;
-        }
-
-        this.prioritiesChanged = false;
-      } catch (error) {
-        console.error('Failed to fetch routing priorities:', error);
-      } finally {
-        if (showLoading) {
-          this.loadingRouting = false;
-        }
-      }
-    },
-    
     connectUsageSocket() {
       try {
         // Close existing connection if any
@@ -1078,46 +969,37 @@ export default {
 
         // Process each interface
         for (let i = 0; i < data.length; i++) {
-          const networkInterface = data[i];
+          const d = data[i];
 
           // Skip invalid entries
-          if (!networkInterface || !networkInterface.interface) {
+          if (!d || !d.interface) {
             console.warn(`Skipping invalid interface data at index ${i}`);
             continue;
           }
 
           // Process the values
-          const downRate = parseFloat(networkInterface.current_rx_rate_mbps) || 0;
-          const upRate = parseFloat(networkInterface.current_tx_rate_mbps) || 0;
+          const downRate = parseFloat(d.rxRateMbps) || 0;
+          const upRate = parseFloat(d.txRateMbps) || 0;
 
           // Create the processed interface object
           const processedInterface = {
-            name: networkInterface.name || networkInterface.interface || 'Unknown',
-            interface: networkInterface.interface,
-            type: networkInterface.type || 'unknown',
-            
-            // Connection status from server
-            active: networkInterface.active || false,  // Use explicit active flag from server
-            state: networkInterface.state || '',       // Raw state from server
-            
-            // Data rates
+            name: d.name || d.interface || 'Unknown',
+            interface: d.interface,
+            type: d.type || 'unknown',
+            ipAddress: d.ipAddress || '',
+            active: d.active || false,
+            rxBytes: parseInt(d.rxBytes) || 0,
+            txBytes: parseInt(d.txBytes) || 0,
             dataDown: parseFloat(downRate.toFixed(2)),
             dataUp: parseFloat(upRate.toFixed(2)),
             totalData: parseFloat((downRate + upRate).toFixed(2)),
-            
-            // Network stats
-            rxBytes: parseInt(networkInterface.rx_bytes) || 0,
-            txBytes: parseInt(networkInterface.tx_bytes) || 0,
-            ipAddress: networkInterface.ip_address || '',
-            signalStrength: parseInt(networkInterface.signal_strength) || 0,
-
-            // Error and packet stats
-            rxErrors: parseInt(networkInterface.rxErrors) || 0,
-            rxDropped: parseInt(networkInterface.rxDropped) || 0,
-            txErrors: parseInt(networkInterface.txErrors) || 0,
-            txDropped: parseInt(networkInterface.txDropped) || 0,
-            rxPackets: parseInt(networkInterface.rxPackets) || 0,
-            txPackets: parseInt(networkInterface.txPackets) || 0
+            rxErrors: parseInt(d.rxErrors) || 0,
+            rxDropped: parseInt(d.rxDropped) || 0,
+            txErrors: parseInt(d.txErrors) || 0,
+            txDropped: parseInt(d.txDropped) || 0,
+            rxPackets: parseInt(d.rxPackets) || 0,
+            txPackets: parseInt(d.txPackets) || 0,
+            signalStrength: parseInt(d.signalStrength) || 0
           };
 
           processedData.push(processedInterface);
@@ -1370,46 +1252,6 @@ export default {
       this.wifiPassword = '';
     },
     
-    // --- Priority Management ---
-    
-    movePriority(id, direction) {
-      const priorities = [...this.routingPriorities];
-      const index = priorities.findIndex(item => item.id === id);
-      
-      if (index === -1) return;
-      
-      if (direction === 'up' && index > 0) {
-        // Swap with previous item
-        [priorities[index], priorities[index - 1]] = [priorities[index - 1], priorities[index]];
-      } else if (direction === 'down' && index < priorities.length - 1) {
-        // Swap with next item
-        [priorities[index], priorities[index + 1]] = [priorities[index + 1], priorities[index]];
-      } else {
-        return;  // No change needed
-      }
-      
-      // Update priorities
-      priorities.forEach((item, i) => {
-        item.priority = i + 1;
-      });
-      
-      this.routingPriorities = priorities;
-      this.prioritiesChanged = true;
-    },
-    
-    async savePriorities() {
-      try {
-        await ConnectionsService.updateRoutingPriorities(this.routingPriorities);
-        this.prioritiesChanged = false;
-        
-        // Refresh connections after changing priorities
-        await this.fetchConnections();
-        await this.fetchRoutingPriorities();
-      } catch (error) {
-        console.error('Failed to save priorities:', error);
-      }
-    },
-    
     // --- Connection Form Management ---
     
     showAddConnectionForm() {
@@ -1586,7 +1428,6 @@ export default {
 .table-container,
 .connections-table tbody tr,
 .lte-info-card,
-.priority-item,
 .usage-item {
   transition: all 0.2s ease;
 }
@@ -1884,11 +1725,6 @@ export default {
   background-color: var(--ark-color-red);
 }
 
-.wired-signal {
-  color: var(--ark-color-black);
-  font-weight: 500;
-}
-
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -2134,87 +1970,12 @@ export default {
   background-color: var(--ark-color-green-hover);
 }
 
-/* Priorities */
-.priorities-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
-  width: 100%;
-}
-
-.priority-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid var(--ark-color-black-shadow);
-  border-radius: 8px;
-  background-color: #f8f9fa;
-}
-
-.priority-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.priority-badge {
-  width: 24px;
-  height: 24px;
-  background-color: var(--ark-color-green);
-  color: var(--ark-color-white);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.priority-name {
-  font-weight: 500;
-}
-
 .type-badge {
   padding: 2px 8px;
   background-color: #e0e0e0;
   border-radius: 4px;
   font-size: 0.8rem;
   text-transform: capitalize;
-}
-
-.priority-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.priority-button {
-  width: 32px;
-  height: 32px;
-  background: none;
-  border: 1px solid var(--ark-color-black-shadow);
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.priority-button:hover {
-  background-color: var(--ark-color-black-shadow);
-}
-
-.priority-button.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.routing-info-panel {
-  padding: 12px;
-  background-color: #fff8e1;
-  border: 1px solid #ffecb3;
-  border-radius: 8px;
 }
 
 .info-title {

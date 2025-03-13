@@ -12,9 +12,6 @@ const ENDPOINTS = {
   wifiScan: `/network/wifi/scan`,
   wifiConnect: `/network/wifi/connect`,
 
-  // Routing
-  routing: `/network/routing`,
-
   // Network usage statistics
   usage: `/network/usage`,
 
@@ -59,15 +56,6 @@ export default {
 
   async connectToWifi(ssid, password = null) {
     return axios.post(ENDPOINTS.wifiConnect, { ssid, password });
-  },
-
-  // Routing priorities
-  async getRoutingPriorities() {
-    return axios.get(ENDPOINTS.routing);
-  },
-
-  async updateRoutingPriorities(priorities) {
-    return axios.put(ENDPOINTS.routing, { priorities });
   },
 
   // Hostname
