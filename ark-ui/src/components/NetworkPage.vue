@@ -67,7 +67,7 @@
               >
                 <td>
                   <div class="connection-name">
-                    <span v-html="getConnectionIcon(connection.type, connection.status)"></span>
+                    <span v-html="getConnectionIcon(connection.type, connection.status, connection.mode)"></span>
                     <span>{{ connection.name }}</span>
                   </div>
                 </td>
@@ -286,19 +286,25 @@
               <div class="form-group">
                 <label for="wifi-mode">Connection Mode:</label>
                 <div class="radio-group">
-                  <label class="radio-option">
-                    <input type="radio" v-model="newConnection.mode" value="infrastructure" id="mode-client">
+                  <label class="radio-option" :class="{ 'disabled': isEditingConnection }">
+                    <input type="radio" v-model="newConnection.mode" value="infrastructure" id="mode-client" :disabled="isEditingConnection">
                     <span>Station (Client)</span>
                   </label>
-                  <label class="radio-option">
-                    <input type="radio" v-model="newConnection.mode" value="ap" id="mode-ap">
+                  <label class="radio-option" :class="{ 'disabled': isEditingConnection }">
+                    <input type="radio" v-model="newConnection.mode" value="ap" id="mode-ap" :disabled="isEditingConnection">
                     <span>Access Point (Hotspot)</span>
                   </label>
                 </div>
               </div>
 
+              <!-- Add warning message for duplicate SSID -->
+              <div v-if="isDuplicateConnection" class="duplicate-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>A connection with this SSID already exists.</span>
+              </div>
+
               <!-- Available WiFi Networks Section (only for infrastructure mode) -->
-              <div v-if="newConnection.mode === 'infrastructure'" class="wifi-scan-container">
+              <div v-if="newConnection.mode === 'infrastructure' && !isEditingConnection" class="wifi-scan-container">
                 <div class="wifi-scan-header">
                   <h3>Available Networks</h3>
                   <button type="button" @click="scanWifiFromConnectionForm" class="wifi-scan-button">
@@ -345,7 +351,7 @@
               <!-- Manual SSID input (for both modes) -->
               <div class="form-group">
                 <label for="wifi-ssid">SSID:</label>
-                <input type="text" id="wifi-ssid" v-model="newConnection.ssid" required>
+                <input type="text" id="wifi-ssid" v-model="newConnection.ssid" required :readonly="isEditingConnection" :class="{ 'readonly-input': isEditingConnection }">
               </div>
 
               <div class="form-group">
@@ -377,7 +383,12 @@
 
               <div class="form-buttons">
                 <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
-                <button type="submit" class="submit-button">
+                <button
+                  type="submit"
+                  class="submit-button"
+                  :disabled="isDuplicateConnection"
+                  :class="{ 'disabled-button': isDuplicateConnection }"
+                >
                   {{ isEditingConnection ? 'Update' : 'Add' }} Connection
                 </button>
               </div>
@@ -427,7 +438,12 @@
 
               <div class="form-buttons">
                 <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
-                <button type="submit" class="submit-button">
+                <button
+                  type="submit"
+                  class="submit-button"
+                  :disabled="isDuplicateConnection"
+                  :class="{ 'disabled-button': isDuplicateConnection }"
+                >
                   {{ isEditingConnection ? 'Update' : 'Add' }} Connection
                 </button>
               </div>
@@ -764,6 +780,25 @@ export default {
       });
       
       return max > 0 ? max : 100;
+    },
+    isDuplicateConnection() {
+      if (!this.newConnection.ssid || this.isEditingConnection) {
+        return false;
+      }
+
+      // For wifi check ssid
+      if (this.newConnection.type === 'wifi') {
+        return this.connections.some(connection =>
+          connection.ssid === this.newConnection.ssid
+        );
+      } else if (this.newConnection.type === 'ethernet') {
+        // For ethernet just check connection name
+        return this.connections.some(connection =>
+          connection.name === this.newConnection.name
+        );
+      }
+
+      return false;
     }
   },
   
@@ -935,7 +970,10 @@ export default {
     
     // Select a WiFi network from the scan list
     selectWifiNetwork(network) {
+      this.newConnection.name = network.ssid;
       this.newConnection.ssid = network.ssid;
+      this.newConnection.type = 'wifi'
+      this.newConnection.mode = 'infrastructure'
       this.selectedNetworkSecured = network.secured;
 
       // If the network is secured, focus the password field
@@ -1234,7 +1272,7 @@ export default {
         this.newConnection.ssid = connection.ssid || '';
         this.newConnection.password = '';  // Don't show existing password
         this.newConnection.mode = connection.mode || 'infrastructure';
-        this.newConnection.autoconnect = true;
+        this.newConnection.autoconnect = connection.autoconnect || true;
       } else if (connection.type === 'ethernet') {
         this.newConnection.ipMethod = 'auto';
         this.newConnection.ipAddress = connection.ipAddress || '';
@@ -1365,17 +1403,18 @@ export default {
     },
     
     // --- Helper Methods ---
-    
-    getConnectionIcon(type, status) {
+    getConnectionIcon(type, status, mode) {
       if (type === 'wifi') {
-        return status === 'active' 
-          ? '<i class="fas fa-wifi connection-icon wifi"></i>' 
-          : '<i class="fas fa-wifi-slash connection-icon wifi-inactive"></i>';
+        if (mode === 'ap') {
+          return '<i class="fas fa-tower-broadcast"></i>';
+        } else {
+          return '<i class="fas fa-wifi"></i>';
+        }
       } else if (type === 'ethernet') {
-        return '<i class="fas fa-network-wired connection-icon ethernet"></i>';
+        return '<i class="fas fa-network-wired"></i>';
       }
       
-      return '<i class="fas fa-question-circle connection-icon unknown"></i>';
+      return '<i class="fas fa-question-circle"></i>';
     }
   }
 };
@@ -1637,26 +1676,6 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.connection-icon {
-  font-size: 1.2rem;
-}
-
-.connection-icon.wifi {
-  color: var(--ark-color-green);
-}
-
-.connection-icon.wifi-inactive {
-  color: var(--ark-color-black);
-}
-
-.connection-icon.ethernet {
-  color: var(--ark-color-blue);
-}
-
-.connection-icon.lte {
-  color: var(--ark-color-orange);
 }
 
 .capitalize {
@@ -2838,16 +2857,38 @@ input:checked + .toggle-slider:before {
   text-transform: lowercase;
 }
 
-/* DNS styling */
 .dns-value {
   display: flex;
   align-items: center;
 }
 
-.dns-icon {
-  color: var(--ark-color-blue);
-  margin-right: 6px;
+.readonly-input {
+  background-color: var(--ark-color-light-grey);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.duplicate-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid var(--ark-color-orange);
+  border-radius: 4px;
+  color: var(--ark-color-orange);
   font-size: 0.9rem;
+  margin: 8px 0;
+}
+
+.duplicate-warning i {
+  font-size: 1rem;
+}
+
+.disabled-button {
+  background-color: var(--ark-color-black-shadow) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
 }
 
 </style>
