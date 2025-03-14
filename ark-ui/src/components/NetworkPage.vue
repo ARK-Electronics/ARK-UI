@@ -79,7 +79,7 @@
                 </td>
                 <td>
                   <div v-if="connection.type !== 'ethernet'" class="signal-container">
-                    <div class="signal-bar" :style="{ width: `${connection.signalStrength}%` }" :class="getSignalClass(connection.signalStrength)"></div>
+                    <div class="signal-bar" :style="{ width: `${connection.signalQuality}%` }" :class="getSignalClass(connection.signalQuality)"></div>
                   </div>
                 </td>
                 <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
@@ -175,11 +175,11 @@
                     <span class="detail-label">IP Address:</span>
                     <span class="detail-value">{{ item.ipAddress }}</span>
                   </div>
-                  <div v-if="item.type !== 'ethernet' && item.signalStrength" class="usage-detail-item">
+                  <div v-if="item.type !== 'ethernet' && item.signalQuality" class="usage-detail-item">
                     <span class="detail-label">Signal Strength:</span>
                     <span class="detail-value">
                       <div class="signal-container">
-                        <div class="signal-bar" :style="{ width: `${item.signalStrength}%` }" :class="getSignalClass(item.signalStrength)"></div>
+                        <div class="signal-bar" :style="{ width: `${item.signalQuality}%` }" :class="getSignalClass(item.signalQuality)"></div>
                       </div>
                     </span>
                   </div>
@@ -326,7 +326,7 @@
                     @click="selectWifiNetwork(network)"
                   >
                     <div class="wifi-info">
-                      <i class="fas fa-wifi" :class="getSignalClass(network.signalStrength)"></i>
+                      <i class="fas fa-wifi" :class="getSignalClass(network.signalQuality)"></i>
                       <div class="wifi-details">
                         <span class="wifi-name">{{ network.ssid }}</span>
                         <span v-if="network.secured" class="security-badge">Secured</span>
@@ -335,7 +335,7 @@
 
                     <div class="wifi-signal">
                       <div class="signal-container">
-                        <div class="signal-bar" :style="{ width: `${network.signalStrength}%` }" :class="getSignalClass(network.signalStrength)"></div>
+                        <div class="signal-bar" :style="{ width: `${network.signalQuality}%` }" :class="getSignalClass(network.signalQuality)"></div>
                       </div>
                     </div>
                   </div>
@@ -493,11 +493,6 @@
           <span>Loading modem information...</span>
         </div>
 
-        <div v-else-if="lteStatus.status === 'not_available'" class="error-container">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>LTE functionality is only available on Jetson platform.</span>
-        </div>
-
         <div v-else-if="lteStatus.status === 'not_found'" class="error-container">
           <i class="fas fa-exclamation-triangle"></i>
           <span>No LTE modem detected. Please check your hardware connection.</span>
@@ -539,16 +534,16 @@
                 <span class="info-value">
                   <div class="signal-container">
                     <div class="signal-bar"
-                         :style="{ width: `${lteStatus.signalStrength || 0}%` }"
-                         :class="getSignalClass(lteStatus.signalStrength)">
+                         :style="{ width: `${lteStatus.signalQuality || 0}%` }"
+                         :class="getSignalClass(lteStatus.signalQuality)">
                     </div>
                   </div>
-                  {{ lteStatus.signalStrength || 0 }}%
+                  {{ lteStatus.signalQuality || 0 }}%
                 </span>
               </div>
               <div class="lte-info-item">
                 <span class="info-label">APN:</span>
-                <span class="info-value">{{ lteStatus.apn || lteStatus.defaultApn || '-' }}</span>
+                <span class="info-value">{{ lteStatus.apn || lteStatus.initialApn ||'-' }}</span>
               </div>
             </div>
 
@@ -597,7 +592,7 @@
                 </div>
                 <div class="lte-info-item">
                   <span class="info-label">MTU:</span>
-                  <span class="info-value">{{ lteStatus.mtu || '1500' }}</span>
+                  <span class="info-value">{{ lteStatus.mtu || '-' }}</span>
                 </div>
               </div>
             </div>
@@ -999,7 +994,7 @@ export default {
             txDropped: parseInt(d.txDropped) || 0,
             rxPackets: parseInt(d.rxPackets) || 0,
             txPackets: parseInt(d.txPackets) || 0,
-            signalStrength: parseInt(d.signalStrength) || 0
+            signalQuality: parseInt(d.signalQuality) || 0
           };
 
           processedData.push(processedInterface);
@@ -1123,7 +1118,8 @@ export default {
     
     async connectLte() {
       try {
-        await ConnectionsService.connectLte(this.lteStatus.apn);
+        // TODO: eventually we want to allow the user to optionally enter an APN
+        await ConnectionsService.connectLte();
         
         // Wait for connection to be established
         setTimeout(async () => {
