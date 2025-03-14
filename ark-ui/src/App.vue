@@ -3,7 +3,7 @@
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
       <router-link class="link" to="/">Overview</router-link>
-      <router-link class="link" to="/network-config">Network</router-link>
+      <router-link class="link" to="/connections-config">Network</router-link>
       <router-link class="link" to="/firmware-upload">Firmware</router-link>
       <a
         class="link external-link"
@@ -71,6 +71,7 @@ export default {
   --ark-color-red: rgba(244, 67, 54, 1);
   --ark-color-red-hover: rgba(244, 67, 54, 0.65);
   --ark-color-orange: rgba(255, 140, 0, 1);
+  --ark-color-light-grey: rgba(248, 249, 250, 1)
 }
 
 #app {

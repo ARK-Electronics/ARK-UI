@@ -489,7 +489,7 @@
         </div>
 
         <div v-if="loadingLte" class="loading-container">
-          <div class="loading-spinner"></div>
+          <div class="spinner"></div>
           <span>Loading modem information...</span>
         </div>
 
@@ -504,123 +504,189 @@
         </div>
 
         <div v-else class="lte-content">
-          <div class="lte-status-card">
-            <div class="lte-status-header">
-              <h3>Modem Status</h3>
-              <div class="status-badge" :class="lteStatus.state">
-                {{ lteStatus.state || 'unknown' }}
+          <!-- Main status card with signal strength -->
+          <div class="lte-status-header-card">
+            <div class="status-header-content">
+              <div class="status-info">
+                <div class="status-badge" :class="lteStatus.state">
+                  {{ lteStatus.state || 'unknown' }}
+                </div>
+                <div v-if="lteStatus.registration === 'roaming'" class="roaming-badge">
+                  Roaming
+                </div>
               </div>
-            </div>
 
-            <div class="lte-info-grid">
-              <div class="lte-info-item">
-                <span class="info-label">Manufacturer:</span>
-                <span class="info-value">{{ lteStatus.manufacturer || '-' }}</span>
-              </div>
-              <div class="lte-info-item">
-                <span class="info-label">Model:</span>
-                <span class="info-value">{{ lteStatus.model || '-' }}</span>
-              </div>
-              <div class="lte-info-item">
-                <span class="info-label">IMEI:</span>
-                <span class="info-value">{{ lteStatus.imei || '-' }}</span>
-              </div>
-              <div class="lte-info-item">
-                <span class="info-label">Carrier:</span>
-                <span class="info-value">{{ lteStatus.operatorName || '-' }}</span>
-              </div>
-              <div class="lte-info-item">
-                <span class="info-label">Signal Strength:</span>
-                <span class="info-value">
-                  <div class="signal-container">
-                    <div class="signal-bar"
-                         :style="{ width: `${lteStatus.signalQuality || 0}%` }"
-                         :class="getSignalClass(lteStatus.signalQuality)">
-                    </div>
+              <div class="signal-info">
+                <div class="signal-label">
+                  <span>Signal Strength</span>
+                  <span>{{ lteStatus.signalQuality || 0 }}%</span>
+                </div>
+                <div class="signal-container wide">
+                  <div class="signal-bar"
+                       :style="{ width: `${lteStatus.signalQuality || 0}%` }"
+                       :class="getSignalClass(lteStatus.signalQuality)">
                   </div>
-                  {{ lteStatus.signalQuality || 0 }}%
-                </span>
+                </div>
               </div>
-              <div class="lte-info-item">
-                <span class="info-label">APN:</span>
-                <span class="info-value">{{ lteStatus.apn || lteStatus.initialApn ||'-' }}</span>
-              </div>
-            </div>
 
-            <div class="lte-actions">
-              <button v-if="lteStatus.state !== 'connected'"
-                      @click="connectLte"
-                      class="connect-button">
-                <i class="fas fa-plug"></i>
-                Connect
-              </button>
-              <button v-else
-                      @click="disconnectLte"
-                      class="disconnect-button">
-                <i class="fas fa-unlink"></i>
-                Disconnect
-              </button>
+              <div class="apn-info">
+                <span class="info-label">APN:</span>
+                <span class="info-value">{{ lteStatus.apn || lteStatus.initialApn || lteStatus.suggestedApn || '-' }}</span>
+              </div>
+
+              <div class="lte-actions">
+                <button v-if="lteStatus.state !== 'connected'"
+                        @click="connectLte"
+                        class="connect-button">
+                  <i class="fas fa-plug"></i>
+                  Connect
+                </button>
+                <button v-else
+                        @click="disconnectLte"
+                        class="disconnect-button">
+                  <i class="fas fa-unlink"></i>
+                  Disconnect
+                </button>
+              </div>
             </div>
           </div>
 
-          <div v-if="lteStatus.state === 'connected' && lteStatus.interface" class="lte-connected-info">
-            <div class="lte-interface-card">
-              <h3>Network Interface</h3>
-
-              <div class="lte-info-grid">
-                <div class="lte-info-item">
-                  <span class="info-label">Interface:</span>
-                  <span class="info-value">{{ lteStatus.interface }}</span>
-                </div>
-                <div class="lte-info-item">
-                  <span class="info-label">Status:</span>
-                  <span class="info-value" :class="lteStatus.interfaceState === 'up' ? 'active' : 'inactive'">
-                    {{ lteStatus.interfaceState === 'up' ? 'UP' : 'DOWN' }}
+          <!-- Two-column grid for top info cards -->
+          <div class="lte-info-top-grid">
+            <!-- Carrier Information Card -->
+            <div class="lte-info-card">
+              <h3 class="card-title carrier-title">Carrier Information</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Network Operator:</span>
+                  <span class="info-value">
+                    {{ lteStatus.operatorName || '-' }}
+                    <span class="info-secondary" v-if="lteStatus.operatorId">({{ lteStatus.operatorId }})</span>
                   </span>
                 </div>
-                <div class="lte-info-item">
-                  <span class="info-label">IP Address:</span>
-                  <span class="info-value">{{ lteStatus.ipAddress || '-' }}</span>
+
+                <div class="info-item">
+                  <span class="info-label">SIM Operator:</span>
+                  <span class="info-value">
+                    {{ lteStatus.simOperatorName || '-' }}
+                    <span class="info-secondary" v-if="lteStatus.simOperatorId">({{ lteStatus.simOperatorId }})</span>
+                  </span>
                 </div>
-                <div class="lte-info-item">
-                  <span class="info-label">Gateway:</span>
-                  <span class="info-value">{{ lteStatus.gateway || '-' }}</span>
+
+                <div class="info-item">
+                  <span class="info-label">Registration:</span>
+                  <span class="info-value capitalize">{{ lteStatus.registration || '-' }}</span>
                 </div>
-                <div class="lte-info-item">
-                  <span class="info-label">Prefix:</span>
-                  <span class="info-value">{{ lteStatus.prefix || '-' }}</span>
+
+                <div class="info-item">
+                  <span class="info-label">SIM Status:</span>
+                  <span class="info-value">{{ lteStatus.simActive === 'yes' ? 'Active' : 'Inactive' }}</span>
                 </div>
-                <div class="lte-info-item">
-                  <span class="info-label">MTU:</span>
-                  <span class="info-value">{{ lteStatus.mtu || '-' }}</span>
+
+                <div class="info-item" v-if="lteStatus.simImsi">
+                  <span class="info-label">SIM IMSI:</span>
+                  <span class="info-value monospace">{{ lteStatus.simImsi }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="lte-dns-card">
-              <h3>DNS Servers</h3>
-              <div v-if="lteStatus.dns && lteStatus.dns.length" class="dns-server-list">
-                <div v-for="(dns, index) in lteStatus.dns" :key="index" class="dns-server-item">
-                  <i class="fas fa-server"></i> {{ dns }}
+            <!-- Hardware Information Card -->
+            <div class="lte-info-card">
+              <h3 class="card-title hardware-title">Modem Hardware</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Manufacturer:</span>
+                  <span class="info-value">{{ lteStatus.manufacturer || '-' }}</span>
                 </div>
-              </div>
-              <div v-else class="empty-dns">
-                <span>No DNS servers configured</span>
+
+                <div class="info-item">
+                  <span class="info-label">Model:</span>
+                  <span class="info-value">{{ lteStatus.model || '-' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">IMEI:</span>
+                  <span class="info-value monospace">{{ lteStatus.imei || '-' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Firmware:</span>
+                  <span class="info-value monospace">{{ lteStatus.firmwareRevision ? lteStatus.firmwareRevision.split(' ')[0] : '-' }}</span>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Connection Details Card -->
+          <div class="lte-info-card lte-connection-card">
+            <h3 class="card-title connection-title">{{ lteStatus.state === 'connected' ? 'Connection Details' : 'Connection Status' }}</h3>
+
+            <div v-if="lteStatus.state === 'connected' && lteStatus.interface">
+              <!-- 3-column grid with consolidated information -->
+              <div class="connection-info-grid">
+                <div class="info-item">
+                  <span class="info-label">Interface:</span>
+                  <span class="info-value monospace">
+                    {{ lteStatus.interface }}
+                    <span :class="lteStatus.interfaceState === 'up' ? 'status-tag status-up' : 'status-tag status-down'">
+                      {{ lteStatus.interfaceState === 'up' ? 'up' : 'down' }}
+                    </span>
+                  </span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">MTU:</span>
+                  <span class="info-value">{{ lteStatus.mtu || '1500' }}</span>
+                </div>
+
+                <!-- First DNS server in the grid -->
+                <div class="info-item" v-if="lteStatus.dns && lteStatus.dns.length > 0">
+                  <span class="info-label">Primary DNS:</span>
+                  <span class="info-value monospace dns-value">
+                    {{ lteStatus.dns[0] }}
+                  </span>
+                </div>
+
+                 <div class="info-item">
+                  <span class="info-label">IP Address:</span>
+                  <span class="info-value monospace">
+                    {{ lteStatus.ipAddress || '-' }}
+                    <span v-if="lteStatus.ipMethod" class="status-tag status-method">
+                      {{ lteStatus.ipMethod }}
+                    </span>
+                  </span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Gateway:</span>
+                  <span class="info-value monospace">{{ lteStatus.gateway || '-' }}</span>
+                </div>
+
+                <!-- Second DNS server in the grid (if available) -->
+                <div class="info-item" v-if="lteStatus.dns && lteStatus.dns.length > 1">
+                  <span class="info-label">Secondary DNS:</span>
+                  <span class="info-value monospace dns-value">
+                    {{ lteStatus.dns[1] }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="not-connected">
+              <span>Not currently connected</span>
+            </div>
+          </div>
+          <!-- End Connection Details Card -->
         </div>
       </div>
+      <!-- End LTE Modem Section -->
     </div>
   </div>
 </template>
 
 <script>
 import ConnectionsService from '../services/ConnectionsService';
-// Try Socket.IO client import differently - include version in debug log
-console.log('Socket.IO client importing...');
 import io from 'socket.io-client';
-console.log('Socket.IO client imported, version:', io?.version || 'unknown');
 
 export default {
   data() {
@@ -1043,9 +1109,6 @@ export default {
       }
     },
 
-    // No longer needed - using 'active' flag directly from server
-    // Method removed as we now use the 'active' status sent by the server
-
     calculateBarWidth(rate) {
       // For zero values, show empty bar
       if (rate <= 0) return '0%';
@@ -1079,16 +1142,6 @@ export default {
       return 'signal-weak';
     },
 
-    // --- UI Actions ---
-    
-    async handleRefresh() {
-      this.refreshing = true;
-      await this.fetchAll();
-      this.refreshing = false;
-    },
-    
-    // --- LTE Management ---
-    
     async fetchLteStatus(showLoading = true) {
       if (showLoading) {
         this.loadingLte = true;
@@ -1118,30 +1171,33 @@ export default {
     
     async connectLte() {
       try {
-        // TODO: eventually we want to allow the user to optionally enter an APN
-        await ConnectionsService.connectLte();
-        
-        // Wait for connection to be established
-        setTimeout(async () => {
+        const response = await ConnectionsService.connectLte();
+
+        if (response && response.data && response.data.status) {
+          this.lteStatus = response.data.status;
+        } else {
           await this.refreshLteStatus();
-        }, 5000);
+        }
       } catch (error) {
         console.error('Failed to connect to LTE:', error);
         alert('Failed to connect to LTE. Please check your APN settings and try again.');
+        await this.refreshLteStatus();
       }
     },
     
     async disconnectLte() {
       try {
-        await ConnectionsService.disconnectLte();
-        
-        // Wait for disconnection to complete
-        setTimeout(async () => {
+        const response = await ConnectionsService.disconnectLte();
+
+        if (response && response.data && response.data.status) {
+          this.lteStatus = response.data.status;
+        } else {
           await this.refreshLteStatus();
-        }, 5000);
+        }
       } catch (error) {
         console.error('Failed to disconnect from LTE:', error);
         alert('Failed to disconnect from LTE network.');
+        await this.refreshLteStatus();
       }
     },
     
@@ -1205,22 +1261,6 @@ export default {
     },
     
     // --- WiFi Management ---
-    
-    connectToWifi(network) {
-      if (network.connected) {
-        return;  // Already connected
-      }
-      
-      if (network.secured) {
-        // Show password dialog for secured networks
-        this.selectedWifiNetwork = network;
-        this.wifiPassword = '';
-        this.showWifiPasswordDialog = true;
-      } else {
-        // Connect directly to open networks
-        this.connectToWifiNetwork(network.ssid);
-      }
-    },
     
     async connectToWifiWithPassword() {
       if (!this.selectedWifiNetwork) return;
@@ -1336,38 +1376,12 @@ export default {
       }
       
       return '<i class="fas fa-question-circle connection-icon unknown"></i>';
-    },
-
-    formatDataRate(rate) {
-      if (!rate) return '0 Kbps';
-      
-      if (rate < 1) {
-        return `${(rate * 1000).toFixed(0)} Kbps`;
-      } else if (rate < 1000) {
-        return `${rate.toFixed(1)} Mbps`;
-      } else {
-        return `${(rate / 1000).toFixed(1)} Gbps`;
-      }
     }
   }
 };
 </script>
 
 <style scoped>
-/* ARK Color Variables */
-:root {
-  --ark-color-black: rgba(0, 0, 0, 0.65);
-  --ark-color-black-bold: rgba(0, 0, 0, 1);
-  --ark-color-black-shadow: rgba(0, 0, 0, 0.1);
-  --ark-color-white: rgba(255, 255, 255, 1);
-  --ark-color-green: rgba(0, 187, 49, 1);
-  --ark-color-green-hover: rgba(0, 187, 49, 0.65);
-  --ark-color-green-shadow: rgba(0, 187, 49, 0.1);
-  --ark-color-blue: rgba(52, 152, 219, 1);
-  --ark-color-red: rgba(244, 67, 54, 1);
-  --ark-color-red-hover: rgba(244, 67, 54, 0.65);
-  --ark-color-orange: rgba(255, 140, 0, 1);
-}
 
 /* Layout */
 .page-container {
@@ -1390,13 +1404,12 @@ export default {
 /* Add a container for the tabs to ensure consistent width */
 .tab-content-wrapper {
   width: 100%;
-  min-width: 100%; /* Prevent shrinking */
-  height: calc(100vh - 180px); /* Account for header, tabs, and padding */
+  min-width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Ensure all section containers have a proper width */
@@ -1408,9 +1421,7 @@ export default {
   border-radius: 8px;
   padding: 20px;
   box-sizing: border-box;
-  min-height: 500px; 
-/*  max-height: calc(100vh - 180px);*/
-/*  height: calc(100vh - 180px);*/
+  min-height: auto;
   overflow-y: auto;  /* Enable vertical scrolling */
   overflow-x: hidden; /* Prevent horizontal scrolling */
   display: flex;
@@ -1426,15 +1437,6 @@ export default {
 .lte-info-card,
 .usage-item {
   transition: all 0.2s ease;
-}
-
-.empty-chart {
-  padding: 32px;
-  display: flex;
-  justify-content: center;
-  color: var(--ark-color-black);
-  opacity: 0.7;
-  font-style: italic;
 }
 
 .header-actions {
@@ -1453,7 +1455,7 @@ export default {
   text-align: center;
 }
 
-.refresh-button, .test-mode-button {
+.refresh-button {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1547,7 +1549,7 @@ export default {
   margin: 0;
 }
 
-.add-button, .scan-button, .save-button {
+.add-button {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1561,26 +1563,10 @@ export default {
   transition: background-color 0.2s;
 }
 
-.add-button:hover, .scan-button:hover, .save-button:hover {
+.add-button:hover {
   background-color: var(--ark-color-green-hover);
 }
 
-.save-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-/* Tables */
-/*.table-container {
-  display: flex;
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: 400px;
-  border-radius: 4px;
-  border: 1px solid var(--ark-color-black-shadow);
-  scrollbar-width: thin;
-  scrollbar-color: var(--ark-color-black-shadow) transparent;
-}*/
 .table-container {
   display: flex;
   flex-direction: column;
@@ -1623,7 +1609,7 @@ export default {
 }
 
 .connections-table th {
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey);
   padding: 12px;
   text-align: left;
   font-size: 0.8rem;
@@ -1698,7 +1684,6 @@ export default {
 .signal-container {
   width: 100px;
   height: 8px;
-  background-color: #eaeaea;
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 4px;
@@ -1773,7 +1758,7 @@ export default {
   border: 1px solid var(--ark-color-black-shadow);
   border-radius: 4px;
   padding: 12px;
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey)
 }
 
 .wifi-scan-header {
@@ -1834,16 +1819,6 @@ export default {
   align-items: center;
   justify-content: center;
   z-index: 5;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--ark-color-black-shadow);
-  border-top: 4px solid var(--ark-color-blue);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 12px;
 }
 
 .empty-networks {
@@ -1923,7 +1898,7 @@ export default {
 .security-badge {
   display: inline-flex;
   padding: 2px 6px;
-  background-color: #f0f0f0;
+  background-color: var(--ark-color-black-shadow);
   border-radius: 4px;
   font-size: 0.7rem;
   color: var(--ark-color-black);
@@ -1944,48 +1919,6 @@ export default {
   color: var(--ark-color-black);
 }
 
-.wifi-connect-button {
-  padding: 6px 12px;
-  background-color: var(--ark-color-blue);
-  color: var(--ark-color-white);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.wifi-connect-button:hover {
-  background-color: rgba(52, 152, 219, 0.8);
-}
-
-.wifi-connect-button.connected {
-  background-color: var(--ark-color-green);
-}
-
-.wifi-connect-button.connected:hover {
-  background-color: var(--ark-color-green-hover);
-}
-
-.type-badge {
-  padding: 2px 8px;
-  background-color: #e0e0e0;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  text-transform: capitalize;
-}
-
-.info-title {
-  color: #f57c00;
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.info-content {
-  color: #5d4037;
-  margin: 0;
-}
-
 /* Data Usage */
 .usage-container {
   display: flex;
@@ -2003,7 +1936,7 @@ export default {
 .rate-bar-container {
   position: relative;
   height: 14px;
-  background-color: #e0e0e0;
+  background-color: var(--ark-color-light-grey);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -2035,13 +1968,6 @@ export default {
   font-weight: 500;
 }
 
-/* Interface status */
-.interface-status {
-  color: var(--ark-color-red);
-  font-style: italic;
-  padding: 8px 0;
-}
-
 /* Responsive design for mobile */
 @media (max-width: 576px) {
   .rate-display {
@@ -2058,43 +1984,6 @@ export default {
   .rate-bar-container {
     width: 100%;
   }
-}
-
-.chart-bar-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 24px; /* Fixed height */
-  min-width: 100%;
-}
-
-.chart-bar {
-  height: 16px;
-  border-radius: 4px;
-  transition: width 0.3s ease; /* Smooth transitions */
-  min-width: 0; /* Allow bars to be truly zero width */
-}
-
-.chart-bar.download {
-  background-color: var(--ark-color-green);
-}
-
-.chart-bar.upload {
-  background-color: var(--ark-color-blue);
-}
-
-.chart-value {
-  font-size: 0.8rem;
-  min-width: 80px;
-  flex-shrink: 0; /* Prevent squishing */
-  text-align: right;
-}
-
-.chart-empty {
-  padding: 32px;
-  display: flex;
-  justify-content: center;
-  color: var(--ark-color-black);
 }
 
 .statistics-grid {
@@ -2116,7 +2005,7 @@ export default {
 }
 
 .stat-item {
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey);
   border-radius: 4px;
   padding: 10px;
   display: flex;
@@ -2160,7 +2049,7 @@ export default {
 }
 
 .usage-item.expanded {
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey);
 }
 
 .usage-details-grid {
@@ -2168,7 +2057,7 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
   margin: 16px 0;
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey);
   padding: 12px;
   border-radius: 4px;
 }
@@ -2189,7 +2078,7 @@ export default {
   font-weight: 500;
 }
 
-.usage-statistics, .usage-total-traffic {
+.usage-statistics {
   margin-top: 18px;
   padding-top: 14px;
   border-top: 1px dashed var(--ark-color-black-shadow);
@@ -2200,34 +2089,6 @@ export default {
   margin-bottom: 10px;
   font-size: 0.9rem;
   color: var(--ark-color-black);
-}
-
-.traffic-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.traffic-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.traffic-label {
-  font-size: 0.8rem;
-  color: var(--ark-color-black);
-  opacity: 0.7;
-}
-
-.traffic-value {
-  font-weight: 500;
-  font-size: 0.9rem;
 }
 
 .usage-item-header {
@@ -2255,7 +2116,7 @@ export default {
 }
 
 .interface-type {
-  background-color: #e0e0e0;
+  background-color: var(--ark-color-light-grey);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -2280,13 +2141,6 @@ export default {
   margin-right: 8px;
 }
 
-.usage-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Compact rate bars for collapsed view */
 .usage-bars-compact {
   margin-bottom: 4px;
 }
@@ -2294,7 +2148,7 @@ export default {
 .usage-bars-compact .rate-bar-container {
   height: 4px;
   margin-bottom: 2px;
-  background-color: #eaeaea;
+  background-color: var(--ark-color-black-shadow);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -2315,17 +2169,6 @@ export default {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.usage-bar-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.usage-bar-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-}
 
 .download-value {
   color: var(--ark-color-green);
@@ -2337,17 +2180,7 @@ export default {
   font-weight: 500;
 }
 
-.usage-bar-container {
-  height: 8px;
-  background-color: #eaeaea;
-  border-radius: 4px;
-  overflow: hidden;
-}
 
-.usage-bar {
-  height: 100%;
-  border-radius: 4px;
-}
 
 .usage-bar.download {
   background-color: var(--ark-color-green);
@@ -2382,17 +2215,6 @@ export default {
   opacity: 0.5;
 }
 
-.scan-button-empty {
-  margin-top: 12px;
-  padding: 8px 16px;
-  background-color: var(--ark-color-blue);
-  color: var(--ark-color-white);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* Dialog */
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -2471,7 +2293,7 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 16px;
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey);
   border: 1px solid var(--ark-color-black-shadow);
   border-radius: 8px;
   cursor: pointer;
@@ -2560,7 +2382,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: var(--ark-color-black-shadow);
   transition: .4s;
   border-radius: 24px;
 }
@@ -2587,7 +2409,7 @@ input:checked + .toggle-slider:before {
 
 .manual-ip-section {
   padding: 12px;
-  background-color: #f8f9fa;
+  background-color: var(--ark-color-light-grey);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -2603,7 +2425,7 @@ input:checked + .toggle-slider:before {
 
 .cancel-button {
   padding: 8px 16px;
-  background-color: #f1f2f3;
+  background-color: var(--ark-color-black-shadow);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -2623,48 +2445,6 @@ input:checked + .toggle-slider:before {
   background-color: var(--ark-color-green-hover);
 }
 
-/* LTE Modem Section */
-.lte-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.lte-status-card, .lte-interface-card, .lte-dns-card {
-  background-color: var(--ark-color-white);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px var(--ark-color-black-shadow);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.lte-status-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.lte-status-header h3, .lte-interface-card h3, .lte-dns-card h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--ark-color-black);
-}
-
-.lte-info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);  /* Force 3 columns for better layout */
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.lte-info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .info-label {
   font-size: 0.85rem;
   color: var(--ark-color-black);
@@ -2676,87 +2456,10 @@ input:checked + .toggle-slider:before {
   color: var(--ark-color-black-bold);
 }
 
-.lte-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.connect-button, .disconnect-button {
-  display: flex;
-  align-items: center;
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  font-size: 0.9rem;
-  cursor: pointer;
-  gap: 8px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.connect-button {
-  background-color: var(--ark-color-green);
-  color: var(--ark-color-white);
-}
-
-.connect-button:hover {
-  background-color: var(--ark-color-green-hover);
-}
-
-.disconnect-button {
-  background-color: var(--ark-color-red);
-  color: var(--ark-color-white);
-}
-
-.disconnect-button:hover {
-  background-color: var(--ark-color-red-hover);
-}
-
-.lte-connected-info {
-  display: flex;
-  gap: 20px;
-}
-
-.lte-interface-card, .lte-dns-card {
-  flex: 1;
-}
-
-.dns-server-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dns-server-item {
-  padding: 8px 12px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  font-family: monospace;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dns-server-item i {
-  color: var(--ark-color-blue);
-}
-
-.empty-dns {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80px;
-  color: var(--ark-color-black);
-  opacity: 0.6;
-  font-style: italic;
-}
-
 .signal-container {
   width: 100%;
   height: 8px;
-  background-color: #f0f0f0;
+  background-color: var(--ark-color-black-shadow);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 4px;
@@ -2766,18 +2469,6 @@ input:checked + .toggle-slider:before {
   height: 100%;
   background-color: var(--ark-color-blue);
   border-radius: 4px;
-}
-
-.signal-bar.good {
-  background-color: var(--ark-color-green);
-}
-
-.signal-bar.fair {
-  background-color: var(--ark-color-orange);
-}
-
-.signal-bar.poor {
-  background-color: var(--ark-color-red);
 }
 
 /* Status badge colors */
@@ -2818,97 +2509,12 @@ input:checked + .toggle-slider:before {
   background-color: var(--ark-color-black-shadow);
 }
 
-@media (max-width: 768px) {
-  .lte-info-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .lte-connected-info {
-    flex-direction: column;
-    gap: 16px;
-  }
-}
-
-.lte-info-card {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid var(--ark-color-black-shadow);
-  overflow: hidden;
-}
-
-.info-label {
-  color: var(--ark-color-black);
-  font-size: 0.8rem;
-  margin-bottom: 8px;
-  opacity: 0.7;
-}
-
-.info-value {
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .text-success {
   color: var(--ark-color-green);
 }
 
-.lte-actions-container {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid var(--ark-color-black-shadow);
-  width: 100%;
-  margin-top: 20px;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.lte-connect-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 100%;
-}
-
-.apn-form-group {
-  max-width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.apn-form-group label {
-  flex-shrink: 0;
-}
-
-.apn-input-container {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.wide-input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.detected-apn-info {
-  font-size: 0.8rem;
-  color: var(--ark-color-green);
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
 .connect-button {
-  background-color: var(--ark-color-blue);
+  background-color: var(--ark-color-green);
   color: var(--ark-color-white);
   border: none;
   border-radius: 4px;
@@ -2919,33 +2525,12 @@ input:checked + .toggle-slider:before {
 }
 
 .connect-button:hover {
-  background-color: rgba(52, 152, 219, 0.8);
+  background-color: var(--ark-color-green-hover);
 }
 
 .connect-button:disabled {
-  background-color: #cccccc;
+  background-color: var(--ark-color-black-shadow);
   cursor: not-allowed;
-}
-
-.lte-connected-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.connected-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ark-color-green);
-}
-
-.connected-message i {
-  font-size: 1.2rem;
-}
-
-.connected-message p {
-  margin: 0;
 }
 
 .disconnect-button {
@@ -2960,25 +2545,6 @@ input:checked + .toggle-slider:before {
 
 .disconnect-button:hover {
   background-color: var(--ark-color-red-hover);
-}
-
-/* For showing fake data during testing */
-.empty-state.with-fake-data {
-  display: flex;
-  flex-direction: column;
-}
-
-.empty-state.with-fake-data .empty-message {
-  margin-bottom: 30px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #ccc;
-}
-
-.empty-state.with-fake-data .note {
-  font-size: 0.8rem;
-  opacity: 0.6;
-  margin-top: 5px;
-  font-style: italic;
 }
 
 .loading-container {
@@ -3049,24 +2615,6 @@ input:checked + .toggle-slider:before {
   color: var(--ark-color-red);
 }
 
-.network-registered-message {
-  margin: 10px 0;
-  padding: 8px;
-  background-color: rgba(255, 140, 0, 0.1);
-  border-radius: 4px;
-  color: var(--ark-color-orange);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-
-.small-text {
-  font-size: 0.8rem;
-  opacity: 0.8;
-  margin-top: 4px;
-}
-
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .tabs-container {
@@ -3080,20 +2628,226 @@ input:checked + .toggle-slider:before {
   .connection-type-options {
     flex-direction: column;
   }
-  
-  .lte-info-grid {
+
+}
+
+/* New LTE Layout Styles */
+.lte-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.lte-status-header-card {
+  background-color: var(--ark-color-white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--ark-color-black-shadow);
+  padding: 16px;
+}
+
+.status-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roaming-badge {
+  padding: 4px 8px;
+  background-color: var(--ark-color-blue);
+  color: var(--ark-color-white);
+  font-size: 0.8rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.signal-info {
+  display: flex;
+  flex-direction: column;
+  width: 140px;
+}
+
+.signal-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.signal-container.wide {
+  width: 140px;
+}
+
+.apn-info {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top two-column grid for Carrier and Hardware info */
+.lte-info-top-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.lte-info-card {
+  background-color: var(--ark-color-white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--ark-color-black-shadow);
+  padding: 16px;
+}
+
+/* Full-width connection card */
+.lte-connection-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ark-color-black-shadow);
+}
+
+.carrier-title {
+  color: var(--ark-color-blue);
+}
+
+.hardware-title {
+  color: var(--ark-color-black);
+}
+
+.connection-title {
+  color: var(--ark-color-green);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.connection-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-secondary {
+  color: var(--ark-color-black);
+  opacity: 0.6;
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+.monospace {
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.not-connected {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ark-color-black);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* DNS Servers Section */
+.dns-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ark-color-black-shadow);
+}
+
+.text-success {
+  color: var(--ark-color-green);
+}
+
+.text-error {
+  color: var(--ark-color-red);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .status-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lte-actions {
+    align-self: flex-end;
+  }
+
+  .lte-info-top-grid {
     grid-template-columns: 1fr;
   }
-  
-  .lte-connected-info {
-    flex-direction: column;
-    gap: 16px;
+
+  .info-grid, .connection-info-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 992px) and (min-width: 769px) {
-  .lte-info-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* Status tags for interface state and IP method */
+.status-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-left: 6px;
+  text-transform: uppercase;
 }
+
+.status-up {
+  background-color: rgba(0, 187, 49, 0.15);
+  color: var(--ark-color-green);
+}
+
+.status-down {
+  background-color: rgba(244, 67, 54, 0.15);
+  color: var(--ark-color-red);
+}
+
+.status-method {
+  background-color: rgba(52, 152, 219, 0.15);
+  color: var(--ark-color-blue);
+  text-transform: lowercase;
+}
+
+/* DNS styling */
+.dns-value {
+  display: flex;
+  align-items: center;
+}
+
+.dns-icon {
+  color: var(--ark-color-blue);
+  margin-right: 6px;
+  font-size: 0.9rem;
+}
+
 </style>
