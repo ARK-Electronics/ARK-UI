@@ -53,7 +53,6 @@
               <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th>Status</th>
                 <th>Signal</th>
                 <th>IP Address</th>
                 <th>Actions</th>
@@ -62,37 +61,36 @@
             <tbody>
               <tr
                 v-for="connection in connections"
-                :key="connection.id"
-                :class="{ 'active-row': connection.status === 'active' }"
+                :key="connection.name"
+                :class="{ 'active-row': connection.active === 'yes' }"
               >
+                <!-- Name -->
                 <td>
                   <div class="connection-name">
-                    <span v-html="getConnectionIcon(connection.type, connection.status, connection.mode)"></span>
+                    <span v-html="getConnectionIcon(connection.type, connection.mode)"></span>
                     <span>{{ connection.name }}</span>
                   </div>
                 </td>
                 <td class="capitalize">{{ connection.type }}</td>
-                <td>
-                  <span class="status-badge" :class="connection.status">
-                    {{ connection.status }}
-                  </span>
-                </td>
+                <!-- Type -->
                 <td>
                   <div v-if="connection.type !== 'ethernet'" class="signal-container">
-                    <div class="signal-bar" :style="{ width: `${connection.signalQuality}%` }" :class="getSignalClass(connection.signalQuality)"></div>
+                    <div class="signal-bar" :style="{ width: `${connection.signal}%` }" :class="getSignalClass(connection.signal)"></div>
                   </div>
                 </td>
-                <td>{{ connection.status === 'active' ? connection.ipAddress : '-' }}</td>
+                <!-- IP address -->
+                <td>{{ connection.ipAddress }}</td>
+                <!-- Actions -->
                 <td class="actions">
-                  <button @click="configureConnection(connection)" class="icon-button configure">
+                  <button @click="editConnection(connection)" class="icon-button configure">
                     <i class="fas fa-cog"></i>
                   </button>
                   <button
                     @click="toggleConnection(connection)"
                     class="icon-button"
-                    :class="connection.status === 'active' ? 'disconnect' : 'connect'"
+                    :class="connection.active === 'yes' ? 'disconnect' : 'connect'"
                   >
-                    <i :class="connection.status === 'active' ? 'fas fa-stop' : 'fas fa-play'"></i>
+                    <i :class="connection.active === 'yes' ? 'fas fa-stop' : 'fas fa-play'"></i>
                   </button>
                   <button @click="deleteConnection(connection)" class="icon-button delete">
                     <i class="fas fa-trash"></i>
@@ -175,11 +173,11 @@
                     <span class="detail-label">IP Address:</span>
                     <span class="detail-value">{{ item.ipAddress }}</span>
                   </div>
-                  <div v-if="item.type !== 'ethernet' && item.signalQuality" class="usage-detail-item">
+                  <div v-if="item.type !== 'ethernet' && item.signal" class="usage-detail-item">
                     <span class="detail-label">Signal Strength:</span>
                     <span class="detail-value">
                       <div class="signal-container">
-                        <div class="signal-bar" :style="{ width: `${item.signalQuality}%` }" :class="getSignalClass(item.signalQuality)"></div>
+                        <div class="signal-bar" :style="{ width: `${item.signal}%` }" :class="getSignalClass(item.signal)"></div>
                       </div>
                     </span>
                   </div>
@@ -332,7 +330,7 @@
                     @click="selectWifiNetwork(network)"
                   >
                     <div class="wifi-info">
-                      <i class="fas fa-wifi" :class="getSignalClass(network.signalQuality)"></i>
+                      <i class="fas fa-wifi" :class="getSignalClass(network.signal)"></i>
                       <div class="wifi-details">
                         <span class="wifi-name">{{ network.ssid }}</span>
                         <span v-if="network.secured" class="security-badge">Secured</span>
@@ -341,7 +339,7 @@
 
                     <div class="wifi-signal">
                       <div class="signal-container">
-                        <div class="signal-bar" :style="{ width: `${network.signalQuality}%` }" :class="getSignalClass(network.signalQuality)"></div>
+                        <div class="signal-bar" :style="{ width: `${network.signal}%` }" :class="getSignalClass(network.signal)"></div>
                       </div>
                     </div>
                   </div>
@@ -401,6 +399,12 @@
                 <input type="text" id="ethernet-name" v-model="newConnection.name" required>
               </div>
 
+              <!-- Add warning message for duplicate SSID -->
+              <div v-if="isDuplicateConnection" class="duplicate-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>A connection with this SSID already exists.</span>
+              </div>
+
               <div class="form-group">
                 <label for="ethernet-method">IP Configuration:</label>
                 <select id="ethernet-method" v-model="newConnection.ipMethod">
@@ -414,26 +418,6 @@
                   <label for="ethernet-ip">IP Address:</label>
                   <input type="text" id="ethernet-ip" v-model="newConnection.ipAddress" placeholder="192.168.1.100">
                 </div>
-
-                <div class="form-group">
-                  <label for="ethernet-gateway">Gateway:</label>
-                  <input type="text" id="ethernet-gateway" v-model="newConnection.gateway" placeholder="192.168.1.1">
-                </div>
-
-                <div class="form-group">
-                  <label for="ethernet-prefix">Prefix Length:</label>
-                  <input type="number" id="ethernet-prefix" v-model="newConnection.prefix" min="1" max="32" placeholder="24">
-                </div>
-
-                <div class="form-group">
-                  <label for="ethernet-dns1">DNS Server 1:</label>
-                  <input type="text" id="ethernet-dns1" v-model="newConnection.dns1" placeholder="8.8.8.8">
-                </div>
-
-                <div class="form-group">
-                  <label for="ethernet-dns2">DNS Server 2:</label>
-                  <input type="text" id="ethernet-dns2" v-model="newConnection.dns2" placeholder="8.8.4.4">
-                </div>
               </div>
 
               <div class="form-buttons">
@@ -446,46 +430,6 @@
                 >
                   {{ isEditingConnection ? 'Update' : 'Add' }} Connection
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- WiFi Password Dialog -->
-      <div v-if="showWifiPasswordDialog" class="dialog-overlay">
-        <div class="dialog-container wifi-password-dialog">
-          <div class="dialog-header">
-            <h3 class="dialog-title">Connect to {{ selectedWifiNetwork.ssid }}</h3>
-            <button @click="closeWifiPasswordDialog" class="close-button">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <div class="dialog-content">
-            <form @submit.prevent="connectToWifiWithPassword" class="wifi-password-form">
-              <div class="form-group">
-                <label for="wifi-connect-password">Password:</label>
-                <div class="password-input">
-                  <input
-                    :type="passwordVisible ? 'text' : 'password'"
-                    id="wifi-connect-password"
-                    v-model="wifiPassword"
-                    required
-                  >
-                  <button
-                    type="button"
-                    @click="togglePasswordVisibility"
-                    class="password-toggle"
-                  >
-                    <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                  </button>
-                </div>
-              </div>
-
-              <div class="form-buttons">
-                <button type="button" @click="closeWifiPasswordDialog" class="cancel-button">Cancel</button>
-                <button type="submit" class="submit-button">Connect</button>
               </div>
             </form>
           </div>
@@ -535,12 +479,12 @@
               <div class="signal-info">
                 <div class="signal-label">
                   <span>Signal Strength</span>
-                  <span>{{ lteStatus.signalQuality || 0 }}%</span>
+                  <span>{{ lteStatus.signal || 0 }}%</span>
                 </div>
                 <div class="signal-container wide">
                   <div class="signal-bar"
-                       :style="{ width: `${lteStatus.signalQuality || 0}%` }"
-                       :class="getSignalClass(lteStatus.signalQuality)">
+                       :style="{ width: `${lteStatus.signal || 0}%` }"
+                       :class="getSignalClass(lteStatus.signal)">
                   </div>
                 </div>
               </div>
@@ -710,7 +654,6 @@ export default {
       activeSection: 'current',
       refreshing: false,
       scanning: false,
-      connections: [],
       availableWifiNetworks: [],
 
       // Network usage data
@@ -727,36 +670,35 @@ export default {
       passwordVisible: false,
       selectedNetworkSecured: false,
       
-      // WiFi password dialog
-      showWifiPasswordDialog: false,
-      selectedWifiNetwork: null,
-      wifiPassword: '',
-      
       // LTE specific
       lteStatus: { status: 'loading' },
       loadingLte: true,
       refreshingLte: false,
-      
-      // New connection data
+
+      // connections []
+      // - name
+      // - type
+      // - device
+      // - autoconnect
+      // - active
+      // - ssid
+      // - mode
+      // - signal
+      connections: [],
+
       newConnection: {
-        id: null,
         name: '',
-        type: '',
-        
+        type: '', // wifi, ethernet
+        autoconnect: true,
         // WiFi specific
         ssid: '',
         password: '',
-        mode: 'infrastructure',
-        autoconnect: true,
-        
+        mode: 'infrastructure', // infrastructure, ap, bridge
         // Ethernet specific
-        ipMethod: 'auto',
+        ipMethod: 'auto', // auto, static
         ipAddress: '',
-        gateway: '',
-        prefix: 24,
-        dns1: '',
-        dns2: '',
       },
+
       
       // Refresh intervals
       dataRefreshInterval: null,
@@ -786,18 +728,13 @@ export default {
         return false;
       }
 
-      // For wifi check ssid
       if (this.newConnection.type === 'wifi') {
         return this.connections.some(connection =>
-          connection.ssid === this.newConnection.ssid
-        );
+          connection.ssid === this.newConnection.ssid);
       } else if (this.newConnection.type === 'ethernet') {
-        // For ethernet just check connection name
         return this.connections.some(connection =>
-          connection.name === this.newConnection.name
-        );
+          connection.name === this.newConnection.name);
       }
-
       return false;
     }
   },
@@ -970,10 +907,13 @@ export default {
     
     // Select a WiFi network from the scan list
     selectWifiNetwork(network) {
-      this.newConnection.name = network.ssid;
-      this.newConnection.ssid = network.ssid;
-      this.newConnection.type = 'wifi'
-      this.newConnection.mode = 'infrastructure'
+      // this.newConnection = {
+      //   ...this.newConnection,
+      //   name: network.ssid,
+      //   ssid: network.ssid,
+      //   type: 'wifi',
+      //   mode: 'infrastructure'
+      // };
       this.selectedNetworkSecured = network.secured;
 
       // If the network is secured, focus the password field
@@ -1098,7 +1038,7 @@ export default {
             txDropped: parseInt(d.txDropped) || 0,
             rxPackets: parseInt(d.rxPackets) || 0,
             txPackets: parseInt(d.txPackets) || 0,
-            signalQuality: parseInt(d.signalQuality) || 0
+            signal: parseInt(d.signal) || 0
           };
 
           processedData.push(processedInterface);
@@ -1177,7 +1117,9 @@ export default {
       if (strength === undefined || strength === null) return '';
       if (strength >= 70) return 'signal-strong';
       if (strength >= 40) return 'signal-medium';
-      return 'signal-weak';
+      if (strength > 0) return 'signal-weak';
+
+      return 'signal-none'
     },
 
     async fetchLteStatus(showLoading = true) {
@@ -1239,14 +1181,12 @@ export default {
       }
     },
     
-    // --- Connection Management ---
-    
     async toggleConnection(connection) {
       try {
-        if (connection.status === 'active') {
-          await ConnectionsService.disconnectFromNetwork(connection.id);
+        if (connection.active === 'yes') {
+          await ConnectionsService.disconnectConnection(connection.name);
         } else {
-          await ConnectionsService.connectToNetwork(connection.id);
+          await ConnectionsService.connectConnection(connection.name);
         }
         
         // Refresh connections
@@ -1256,13 +1196,12 @@ export default {
       }
     },
     
-    async configureConnection(connection) {
+    async editConnection(connection) {
       this.isEditingConnection = true;
       this.connectionType = connection.type;
       
       // Clone the connection to avoid modifying the original
       this.newConnection = {
-        id: connection.id,
         name: connection.name,
         type: connection.type
       };
@@ -1291,43 +1230,14 @@ export default {
       }
       
       try {
-        await ConnectionsService.deleteConnection(connection.id);
+        await ConnectionsService.deleteConnection(connection.name);
         await this.fetchConnections();
       } catch (error) {
         console.error('Failed to delete connection:', error);
       }
     },
     
-    // --- WiFi Management ---
-    
-    async connectToWifiWithPassword() {
-      if (!this.selectedWifiNetwork) return;
-      
-      await this.connectToWifiNetwork(this.selectedWifiNetwork.ssid, this.wifiPassword);
-      this.closeWifiPasswordDialog();
-    },
-    
-    async connectToWifiNetwork(ssid, password = null) {
-      try {
-        await ConnectionsService.connectToWifi(ssid, password);
-        
-        // Refresh connections and available networks
-        await this.fetchConnections();
-        await this.scanWifi();
-      } catch (error) {
-        console.error('Failed to connect to WiFi:', error);
-        alert('Failed to connect to WiFi network. Please check your password and try again.');
-      }
-    },
-    
-    closeWifiPasswordDialog() {
-      this.showWifiPasswordDialog = false;
-      this.selectedWifiNetwork = null;
-      this.wifiPassword = '';
-    },
-    
     // --- Connection Form Management ---
-    
     showAddConnectionForm() {
       this.showConnectionForm = true;
       this.connectionType = null;
@@ -1353,15 +1263,14 @@ export default {
     
     resetNewConnection() {
       this.newConnection = {
-        id: null,
         name: '',
         type: '',
+        autoconnect: true,
         
         // WiFi specific
         ssid: '',
         password: '',
         mode: 'infrastructure',
-        autoconnect: true,
         
         // Ethernet specific
         ipMethod: 'auto',
@@ -1375,12 +1284,12 @@ export default {
     
     async saveConnection() {
       try {
-        const payload = { ...this.newConnection };
+        const connection = { ...this.newConnection };
         
         if (this.isEditingConnection) {
-          await ConnectionsService.updateConnection(payload.id, payload);
+          await ConnectionsService.updateConnection(connection.name, connection);
         } else {
-          await ConnectionsService.createConnection(payload);
+          await ConnectionsService.createConnection(connection);
         }
         
         // Close form and refresh data
@@ -1725,6 +1634,10 @@ export default {
   background-color: var(--ark-color-red);
 }
 
+.signal-bar.signal-none {
+  background-color: var(--ark-color-black-shadow);
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -1764,7 +1677,6 @@ export default {
   color: var(--ark-color-white);
 }
 
-/* WiFi Networks */
 .wifi-networks-container, .wifi-scan-container {
   position: relative;
   display: flex;
@@ -2188,31 +2100,6 @@ export default {
   to { opacity: 1; transform: translateY(0); }
 }
 
-
-.download-value {
-  color: var(--ark-color-green);
-  font-weight: 500;
-}
-
-.upload-value {
-  color: var(--ark-color-blue);
-  font-weight: 500;
-}
-
-
-
-.usage-bar.download {
-  background-color: var(--ark-color-green);
-}
-
-.usage-bar.upload {
-  background-color: var(--ark-color-blue);
-}
-
-.usage-bar.lighter {
-  opacity: 0.7;
-}
-
 /* Empty States */
 .empty-state {
   padding: 32px;
@@ -2255,10 +2142,6 @@ export default {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.wifi-password-dialog {
-  max-width: 400px;
 }
 
 .dialog-header {
