@@ -9,8 +9,6 @@ const ENDPOINTS = {
   usage: `/network/usage`,
   hostname: `/network/hostname`,
   lteStatus: `/network/lte/status`,
-  lteConnect: `/network/lte/connect`,
-  lteDisconnect: `/network/lte/disconnect`,
 };
 
 export default {
@@ -44,10 +42,4 @@ export default {
   async getLteStatus() {
     return axios.get(ENDPOINTS.lteStatus);
   },
-  async connectLte(apn = null) {
-    return axios.post(ENDPOINTS.lteConnect, { apn });
-  },
-  async disconnectLte() {
-    return axios.post(ENDPOINTS.lteDisconnect);
-  }
 };

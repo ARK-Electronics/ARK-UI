@@ -19,7 +19,8 @@
       >
         Data Usage
       </button>
-      <button 
+      <button
+        v-if="hasLteModem"
         class="tab-button"
         :class="{ 'active': activeSection === 'lte' }"
         @click="activeSection = 'lte'"
@@ -263,22 +264,32 @@
           <div class="dialog-content">
             <div v-if="!newConnection.type" class="connection-type-selector">
               <div class="connection-type-title">Select Connection Type</div>
-              <div class="connection-type-options">
-                <button
-                  @click="selectConnectionType('wifi')"
-                  class="connection-type-button"
-                >
-                  <i class="fas fa-wifi"></i>
-                  <span>WiFi</span>
-                </button>
-                <button
-                  @click="selectConnectionType('ethernet')"
-                  class="connection-type-button"
-                >
-                  <i class="fas fa-network-wired"></i>
-                  <span>Ethernet</span>
-                </button>
-                <!-- LTE connection type removed - LTE handled in dedicated tab -->
+                <div class="connection-type-options">
+                  <button
+                    @click="selectConnectionType('wifi')"
+                    class="connection-type-button"
+                  >
+                    <i class="fas fa-wifi"></i>
+                    <span>WiFi</span>
+                  </button>
+                  <button
+                    @click="selectConnectionType('ethernet')"
+                    class="connection-type-button"
+                  >
+                    <i class="fas fa-network-wired"></i>
+                    <span>Ethernet</span>
+                  </button>
+                  <button
+                    v-if="hasLteModem"
+                    @click="selectConnectionType('lte')"
+                    class="connection-type-button"
+                    :class="{'disabled': hasExistingLteConnection}"
+                    :disabled="hasExistingLteConnection"
+                  >
+                    <i class="fas fa-signal"></i>
+                    <span>LTE / Cellular</span>
+                    <span v-if="hasExistingLteConnection" class="connection-type-note">An LTE connection already exists</span>
+                  </button>
               </div>
             </div>
 
@@ -437,6 +448,47 @@
                 </button>
               </div>
             </form>
+
+            <!-- LTE Connection Form -->
+            <form v-if="newConnection.type === 'lte'" @submit.prevent="saveConnection" class="connection-form">
+              <div class="form-group">
+                <label for="lte-name">Connection Name:</label>
+                <input type="text" id="lte-name" v-model="newConnection.name" required>
+              </div>
+
+              <div class="form-group">
+                <label for="lte-apn">APN (Access Point Name):</label>
+                <input type="text" id="lte-apn" v-model="newConnection.apn" required placeholder="e.g., fast.t-mobile.com">
+              </div>
+
+              <div v-if="lteStatus.suggestedApn" class="apn-suggestion">
+                <i class="fas fa-info-circle"></i>
+                <span>Suggested APN for your carrier: <strong>{{ lteStatus.suggestedApn }}</strong></span>
+                <button type="button" @click="useSuggestedApn" class="use-suggested-button">Use Suggested</button>
+              </div>
+
+              <div class="form-group">
+                <span class="label-text">Auto-Connect:</span>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="lte-autoconnect"
+                         :checked="newConnection.autoconnect === 'yes'"
+                         @change="newConnection.autoconnect = $event.target.checked ? 'yes' : 'no'">
+                  <label for="lte-autoconnect" class="toggle-slider"></label>
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="button" @click="closeConnectionForm" class="cancel-button">Cancel</button>
+                <button
+                  type="submit"
+                  class="submit-button"
+                  :disabled="isDuplicateConnection"
+                  :class="{ 'disabled-button': isDuplicateConnection }"
+                >
+                  {{ isEditingConnection ? 'Update' : 'Add' }} Connection
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -494,20 +546,6 @@
                 <span class="info-value">{{ lteStatus.apn || lteStatus.initialApn || lteStatus.suggestedApn || '-' }}</span>
               </div>
 
-              <div class="lte-actions">
-                <button v-if="lteStatus.state !== 'connected'"
-                        @click="connectLte"
-                        class="connect-button">
-                  <i class="fas fa-plug"></i>
-                  Connect
-                </button>
-                <button v-else
-                        @click="disconnectLte"
-                        class="disconnect-button">
-                  <i class="fas fa-unlink"></i>
-                  Disconnect
-                </button>
-              </div>
             </div>
           </div>
 
@@ -727,12 +765,21 @@ export default {
           connection.name === this.newConnection.name);
       }
       return false;
-    }
+    },
+    hasLteModem() {
+      // Check if we have a valid lteStatus that isn't an error state
+      return this.lteStatus && this.lteStatus.model && this.lteStatus.model.trim() !== '';
+    },
+    hasExistingLteConnection() {
+      return this.connections.some(connection => connection.type === 'lte');
+    },
   },
   
   async mounted() {
     // Initial data fetch
     await this.fetchAll();
+    // Also fetch LTE status to determine if we should show LTE options
+    await this.fetchLteStatus();
     
     // Connect to socket if starting on usage tab
     if (this.activeSection === 'usage') {
@@ -1073,43 +1120,10 @@ export default {
       await this.fetchLteStatus();
       this.refreshingLte = false;
     },
-    
-    async connectLte() {
-      try {
-        this.refreshingLte = true
-        const response = await ConnectionsService.connectLte();
 
-        if (response && response.data && response.data.status) {
-          this.lteStatus = response.data.status;
-        } else {
-          await this.refreshLteStatus();
-        }
-      } catch (error) {
-        console.error('Failed to connect to LTE:', error);
-        alert('Failed to connect to LTE. Please check your APN settings and try again.');
-        await this.refreshLteStatus();
-      } finally {
-        this.refreshingLte = false
-      }
-    },
-    
-    async disconnectLte() {
-      try {
-        this.refreshingLte = true
-
-        const response = await ConnectionsService.disconnectLte();
-
-        if (response && response.data && response.data.status) {
-          this.lteStatus = response.data.status;
-        } else {
-          await this.refreshLteStatus();
-        }
-      } catch (error) {
-        console.error('Failed to disconnect from LTE:', error);
-        alert('Failed to disconnect from LTE network.');
-        await this.refreshLteStatus();
-      } finally {
-        this.refreshingLte = false
+    useSuggestedApn() {
+      if (this.lteStatus && this.lteStatus.suggestedApn) {
+        this.newConnection.apn = this.lteStatus.suggestedApn;
       }
     },
     
@@ -1146,6 +1160,14 @@ export default {
       } else if (connection.type === 'ethernet') {
         this.newConnection.ipMethod = connection.ipMethod || 'auto';
         this.newConnection.ipAddress = connection.ipAddress || '';
+      } else if (connection.type === 'lte') {
+        // For LTE, fetch the current APN
+        this.newConnection.apn = connection.apn || '';
+
+        // If we don't have the APN, try to get it from the LTE status
+        if (!this.newConnection.apn && this.lteStatus && this.lteStatus.apn) {
+          this.newConnection.apn = this.lteStatus.apn;
+        }
       }
       
       this.showConnectionForm = true;
@@ -1158,6 +1180,7 @@ export default {
       
       try {
         await ConnectionsService.deleteConnection(connection.name);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay
         await this.fetchConnections();
       } catch (error) {
         console.error('Failed to delete connection:', error);
@@ -1183,6 +1206,12 @@ export default {
         this.scanWifiFromConnectionForm();
       } else if (type === 'ethernet') {
         this.newConnection.name = 'Ethernet Connection';
+      } else if (type === 'lte') {
+        this.newConnection.name = 'LTE Connection';
+        // Fetch LTE status to get suggested APN if not already loaded
+        if (!this.lteStatus || !this.lteStatus.suggestedApn) {
+          this.fetchLteStatus();
+        }
       }
     },
     
@@ -1200,10 +1229,9 @@ export default {
         // Ethernet specific
         ipMethod: 'auto',
         ipAddress: '',
-        gateway: '',
-        prefix: 24,
-        dns1: '',
-        dns2: '',
+
+        // LTE specific
+        apn: '',
       };
     },
     
@@ -1245,6 +1273,8 @@ export default {
         }
       } else if (type === 'ethernet') {
         return '<i class="fas fa-network-wired"></i>';
+      } else if (type === 'lte') {
+        return '<i class="fas fa-signal"></i>';
       }
       
       return '<i class="fas fa-question-circle"></i>';
@@ -2616,10 +2646,6 @@ input:checked + .toggle-slider:before {
     align-items: flex-start;
   }
 
-  .lte-actions {
-    align-self: flex-end;
-  }
-
   .lte-info-top-grid {
     grid-template-columns: 1fr;
   }
@@ -2695,6 +2721,18 @@ input:checked + .toggle-slider:before {
   width: 18px; /* Fixed width for all icons */
   text-align: center; /* Center the icon within the container */
   margin-right: 8px; /* Consistent spacing between icon and text */
+}
+
+.connection-type-button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.connection-type-note {
+  display: block;
+  font-size: 0.7rem;
+  color: #d32f2f;
+  margin-top: 5px;
 }
 
 </style>
