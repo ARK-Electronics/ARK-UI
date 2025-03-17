@@ -37,7 +37,7 @@
           <h2 class="section-title">Connections</h2>
           <div class="header-actions">
             <button @click="fetchConnections" class="refresh-button">
-              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingConnections }"></i>
               Refresh
             </button>
             <button @click="showAddConnectionForm" class="add-button">
@@ -67,12 +67,15 @@
                 <!-- Name -->
                 <td>
                   <div class="connection-name">
-                    <span v-html="getConnectionIcon(connection.type, connection.mode)"></span>
+                    <span class="icon-container" v-html="getConnectionIcon(connection.type, connection.mode)"></span>
                     <span>{{ connection.name }}</span>
                   </div>
                 </td>
-                <td class="capitalize">{{ connection.type }}</td>
                 <!-- Type -->
+                <td class="capitalize">
+                  {{ connection.type === 'wifi' && connection.mode === 'ap' ? 'wifi-hotspot' : connection.type }}
+                </td>
+                <!-- Signal -->
                 <td>
                   <div v-if="connection.type !== 'ethernet'" class="signal-container">
                     <div class="signal-bar" :style="{ width: `${connection.signal}%` }" :class="getSignalClass(connection.signal)"></div>
@@ -258,7 +261,7 @@
           </div>
 
           <div class="dialog-content">
-            <div v-if="!connectionType" class="connection-type-selector">
+            <div v-if="!newConnection.type" class="connection-type-selector">
               <div class="connection-type-title">Select Connection Type</div>
               <div class="connection-type-options">
                 <button
@@ -280,7 +283,7 @@
             </div>
 
             <!-- WiFi Connection Form -->
-            <form v-if="connectionType === 'wifi'" @submit.prevent="saveConnection" class="connection-form">
+            <form v-if="newConnection.type === 'wifi'" @submit.prevent="saveConnection" class="connection-form">
               <div class="form-group">
                 <label for="wifi-mode">Connection Mode:</label>
                 <div class="radio-group">
@@ -374,7 +377,9 @@
               <div v-if="newConnection.mode === 'infrastructure'" class="form-group">
                 <span class="label-text">Auto-Connect:</span>
                 <div class="toggle-switch">
-                  <input type="checkbox" id="wifi-autoconnect" v-model="newConnection.autoconnect">
+                  <input type="checkbox" id="wifi-autoconnect"
+                         :checked="newConnection.autoconnect === 'yes'"
+                         @change="newConnection.autoconnect = $event.target.checked ? 'yes' : 'no'">
                   <label for="wifi-autoconnect" class="toggle-slider"></label>
                 </div>
               </div>
@@ -393,16 +398,16 @@
             </form>
 
             <!-- Ethernet Connection Form -->
-            <form v-if="connectionType === 'ethernet'" @submit.prevent="saveConnection" class="connection-form">
+            <form v-if="newConnection.type === 'ethernet'" @submit.prevent="saveConnection" class="connection-form">
               <div class="form-group">
                 <label for="ethernet-name">Connection Name:</label>
                 <input type="text" id="ethernet-name" v-model="newConnection.name" required>
               </div>
 
-              <!-- Add warning message for duplicate SSID -->
+              <!-- Add warning message for duplicate name -->
               <div v-if="isDuplicateConnection" class="duplicate-warning">
                 <i class="fas fa-exclamation-triangle"></i>
-                <span>A connection with this SSID already exists.</span>
+                <span>A connection with this name already exists.</span>
               </div>
 
               <div class="form-group">
@@ -448,12 +453,7 @@
           </div>
         </div>
 
-        <div v-if="loadingLte" class="loading-container">
-          <div class="spinner"></div>
-          <span>Loading modem information...</span>
-        </div>
-
-        <div v-else-if="lteStatus.status === 'not_found'" class="error-container">
+        <div v-if="lteStatus.status === 'not_found'" class="error-container">
           <i class="fas fa-exclamation-triangle"></i>
           <span>No LTE modem detected. Please check your hardware connection.</span>
         </div>
@@ -652,7 +652,7 @@ export default {
   data() {
     return {
       activeSection: 'current',
-      refreshing: false,
+      refreshingConnections: false,
       scanning: false,
       availableWifiNetworks: [],
 
@@ -661,18 +661,15 @@ export default {
       expandedInterfaces: [],  // Track expanded/collapsed state of each interface
       socketError: null,
       socket: null,
-      refreshingUsage: false,
       
       // Connection form
       showConnectionForm: false,
-      connectionType: null,
       isEditingConnection: false,
       passwordVisible: false,
       selectedNetworkSecured: false,
       
       // LTE specific
       lteStatus: { status: 'loading' },
-      loadingLte: true,
       refreshingLte: false,
 
       // connections []
@@ -689,7 +686,7 @@ export default {
       newConnection: {
         name: '',
         type: '', // wifi, ethernet
-        autoconnect: true,
+        autoconnect: 'yes',
         // WiFi specific
         ssid: '',
         password: '',
@@ -698,16 +695,6 @@ export default {
         ipMethod: 'auto', // auto, static
         ipAddress: '',
       },
-
-      
-      // Refresh intervals
-      dataRefreshInterval: null,
-      wifiScanInterval: null,
-      lastScanAnimation: 0,
-      
-      // UI states
-      loadingConnections: false,
-      loadingWifi: false,
     };
   },
   
@@ -724,14 +711,18 @@ export default {
       return max > 0 ? max : 100;
     },
     isDuplicateConnection() {
-      if (!this.newConnection.ssid || this.isEditingConnection) {
-        return false;
-      }
 
       if (this.newConnection.type === 'wifi') {
+        if (!this.newConnection.ssid || this.isEditingConnection) {
+          return false;
+        }
         return this.connections.some(connection =>
           connection.ssid === this.newConnection.ssid);
+
       } else if (this.newConnection.type === 'ethernet') {
+        if (!this.newConnection.name || this.isEditingConnection) {
+          return false;
+        }
         return this.connections.some(connection =>
           connection.name === this.newConnection.name);
       }
@@ -743,21 +734,6 @@ export default {
     // Initial data fetch
     await this.fetchAll();
     
-    // Set up automatic refresh only for active tab data
-    this.dataRefreshInterval = setInterval(() => {
-      // Only refresh the current active section data
-      if (this.activeSection !== 'usage') {
-        this.fetchSectionData(this.activeSection, false);
-      }
-    }, 15000);
-
-    // Only scan for WiFi when in the connection form with WiFi selected
-    this.wifiScanInterval = setInterval(() => {
-      if (this.showConnectionForm && this.connectionType === 'wifi') {
-        this.backgroundScanWifi();
-      }
-    }, 5000);
-
     // Connect to socket if starting on usage tab
     if (this.activeSection === 'usage') {
       this.connectUsageSocket();
@@ -765,15 +741,6 @@ export default {
   },
   
   beforeUnmount() {
-    // Clean up all resources when component is destroyed
-    if (this.dataRefreshInterval) {
-      clearInterval(this.dataRefreshInterval);
-    }
-
-    if (this.wifiScanInterval) {
-      clearInterval(this.wifiScanInterval);
-    }
-
     // Make sure socket is disconnected
     this.disconnectUsageSocket();
   },
@@ -800,37 +767,32 @@ export default {
     // --- Data Fetching ---
     
     // Helper method to fetch only data needed for current section
-    fetchSectionData(section, showLoading = false) {
+    fetchSectionData(section) {
       switch (section) {
         case 'current':
-          this.fetchConnections(showLoading);
+          this.fetchConnections();
           break;
         case 'usage':
           // For usage tab, we only need to connect to WebSocket
           // No REST API call needed - data comes via WebSocket
           break;
         case 'lte':
-          this.fetchLteStatus(showLoading);
+          this.fetchLteStatus();
           break;
       }
     },
 
     async fetchAll() {
       try {
-        // Load data for the active section only to improve performance
-        // Use true for showLoading to ensure loading indicators are displayed
-        this.fetchSectionData(this.activeSection, true);
+        this.fetchSectionData(this.activeSection);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     },
     
-    async fetchConnections(showLoading = true) {
-      if (showLoading) {
-        this.loadingConnections = true;
-      }
-
+    async fetchConnections() {
       try {
+        this.refreshingConnections = true
         const response = await ConnectionsService.getConnections();
 
         // Simply replace the array with new data
@@ -839,9 +801,7 @@ export default {
       } catch (error) {
         console.error('Failed to fetch connections:', error);
       } finally {
-        if (showLoading) {
-          this.loadingConnections = false;
-        }
+        this.refreshingConnections = false
       }
     },
     
@@ -855,36 +815,6 @@ export default {
         console.error('Failed to scan WiFi networks:', error);
       } finally {
         this.scanning = false;
-        this.lastScanAnimation = Date.now();
-      }
-    },
-
-    // Run WiFi scan in the background without animation
-    async backgroundScanWifi() {
-      // If we're not in the connection form or the form is not showing WiFi,
-      // skip the scan to save resources
-      if (!this.showConnectionForm || this.connectionType !== 'wifi' || this.newConnection.mode !== 'infrastructure') {
-        return;
-      }
-
-      // Don't show animation if we recently scanned (less than 10 seconds ago)
-      const showAnimation = Date.now() - this.lastScanAnimation > 10000 && this.availableWifiNetworks.length === 0;
-
-      if (showAnimation) {
-        this.scanning = true;
-      }
-
-      try {
-        const response = await ConnectionsService.scanWifiNetworks();
-        // Filter out hidden networks (those with -- as the name)
-        this.availableWifiNetworks = response.data.filter(network => network.ssid !== '--');
-      } catch (error) {
-        console.error('Failed to scan WiFi networks in background:', error);
-      } finally {
-        if (showAnimation) {
-          this.scanning = false;
-          this.lastScanAnimation = Date.now();
-        }
       }
     },
 
@@ -901,7 +831,6 @@ export default {
         console.error('Failed to scan WiFi networks:', error);
       } finally {
         this.scanning = false;
-        this.lastScanAnimation = Date.now();
       }
     },
     
@@ -1122,10 +1051,8 @@ export default {
       return 'signal-none'
     },
 
-    async fetchLteStatus(showLoading = true) {
-      if (showLoading) {
-        this.loadingLte = true;
-      }
+    async fetchLteStatus() {
+      this.refreshingLte = true;
 
       try {
         const response = await ConnectionsService.getLteStatus();
@@ -1137,9 +1064,7 @@ export default {
         console.error('Failed to fetch LTE status:', error);
         this.lteStatus = { status: 'error', message: error.message || 'Failed to fetch LTE status' };
       } finally {
-        if (showLoading) {
-          this.loadingLte = false;
-        }
+        this.refreshingLte = false;
       }
     },
     
@@ -1151,6 +1076,7 @@ export default {
     
     async connectLte() {
       try {
+        this.refreshingLte = true
         const response = await ConnectionsService.connectLte();
 
         if (response && response.data && response.data.status) {
@@ -1162,11 +1088,15 @@ export default {
         console.error('Failed to connect to LTE:', error);
         alert('Failed to connect to LTE. Please check your APN settings and try again.');
         await this.refreshLteStatus();
+      } finally {
+        this.refreshingLte = false
       }
     },
     
     async disconnectLte() {
       try {
+        this.refreshingLte = true
+
         const response = await ConnectionsService.disconnectLte();
 
         if (response && response.data && response.data.status) {
@@ -1178,6 +1108,8 @@ export default {
         console.error('Failed to disconnect from LTE:', error);
         alert('Failed to disconnect from LTE network.');
         await this.refreshLteStatus();
+      } finally {
+        this.refreshingLte = false
       }
     },
     
@@ -1198,27 +1130,22 @@ export default {
     
     async editConnection(connection) {
       this.isEditingConnection = true;
-      this.connectionType = connection.type;
       
       // Clone the connection to avoid modifying the original
       this.newConnection = {
         name: connection.name,
-        type: connection.type
+        type: connection.type,
+        autoconnect: connection.autoconnect
       };
       
-      // Add type-specific properties
       if (connection.type === 'wifi') {
         this.newConnection.ssid = connection.ssid || '';
-        this.newConnection.password = '';  // Don't show existing password
+        this.newConnection.password = '';
         this.newConnection.mode = connection.mode || 'infrastructure';
-        this.newConnection.autoconnect = connection.autoconnect || true;
+
       } else if (connection.type === 'ethernet') {
-        this.newConnection.ipMethod = 'auto';
+        this.newConnection.ipMethod = connection.ipMethod || 'auto';
         this.newConnection.ipAddress = connection.ipAddress || '';
-        this.newConnection.gateway = '';
-        this.newConnection.prefix = 24;
-        this.newConnection.dns1 = '';
-        this.newConnection.dns2 = '';
       }
       
       this.showConnectionForm = true;
@@ -1240,14 +1167,12 @@ export default {
     // --- Connection Form Management ---
     showAddConnectionForm() {
       this.showConnectionForm = true;
-      this.connectionType = null;
       this.isEditingConnection = false;
       this.resetNewConnection();
       this.selectedNetworkSecured = false;
     },
     
     selectConnectionType(type) {
-      this.connectionType = type;
       this.resetNewConnection();
       this.newConnection.type = type;
       
@@ -1265,7 +1190,7 @@ export default {
       this.newConnection = {
         name: '',
         type: '',
-        autoconnect: true,
+        autoconnect: 'yes',
         
         // WiFi specific
         ssid: '',
@@ -1303,7 +1228,6 @@ export default {
     
     closeConnectionForm() {
       this.showConnectionForm = false;
-      this.connectionType = null;
       this.isEditingConnection = false;
     },
     
@@ -1312,7 +1236,7 @@ export default {
     },
     
     // --- Helper Methods ---
-    getConnectionIcon(type, status, mode) {
+    getConnectionIcon(type, mode) {
       if (type === 'wifi') {
         if (mode === 'ap') {
           return '<i class="fas fa-tower-broadcast"></i>';
@@ -2449,14 +2373,6 @@ input:checked + .toggle-slider:before {
   background-color: var(--ark-color-red-hover);
 }
 
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-}
-
 .spinner {
   border: 4px solid var(--ark-color-black-shadow);
   border-top: 4px solid var(--ark-color-blue);
@@ -2772,6 +2688,13 @@ input:checked + .toggle-slider:before {
   background-color: var(--ark-color-black-shadow) !important;
   cursor: not-allowed !important;
   opacity: 0.6;
+}
+
+.icon-container {
+  display: inline-block;
+  width: 18px; /* Fixed width for all icons */
+  text-align: center; /* Center the icon within the container */
+  margin-right: 8px; /* Consistent spacing between icon and text */
 }
 
 </style>
