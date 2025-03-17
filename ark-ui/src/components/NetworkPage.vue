@@ -288,7 +288,6 @@
                   >
                     <i class="fas fa-signal"></i>
                     <span>LTE / Cellular</span>
-                    <span v-if="hasExistingLteConnection" class="connection-type-note">An LTE connection already exists</span>
                   </button>
               </div>
             </div>
