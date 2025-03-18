@@ -81,126 +81,7 @@ function executeScriptWithProgress(scriptPath, args, socket) {
     socket.emit('error', { message: `Failed to start subprocess: ${err.message}` });
   });
 }
-//// SERVICE :: GET :: STATUSES
-app.get('/api/service/statuses', async (req, res) => {
-  console.log('/api/service/statuses');
-  try {
-    const result = await execScript('service_get_statuses.sh');
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send('Error retrieving service statuses');
-    console.error('Error retrieving service statuses');
-  }
-});
-//// SERVICE :: GET :: CONFIG
-app.get('/api/service/config', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/config GET for ${serviceName}`);
-  try {
-    const result = await execScript('service_get_config.sh', [serviceName]);
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send(`Error retrieving configuration for ${serviceName}`);
-    console.error(`Error retrieving configuration for ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: POST :: CONFIG
-app.post('/api/service/config', async (req, res) => {
-  const { serviceName } = req.query;
-  const { config } = req.body;
-  console.log(`/api/service/config POST for ${serviceName}`);
 
-  try {
-    // Create a temporary file to store the configuration
-    const tempFilePath = path.join('/tmp', `${serviceName}-config.tmp`);
-
-    // Write the configuration data to the temp file
-    fs.writeFileSync(tempFilePath, config, 'utf-8');
-
-    // Pass the temp file path to the script instead of the config data
-    const result = await execScript('service_save_config.sh', [serviceName, tempFilePath]);
-    console.log(`Temporary config file path: ${tempFilePath}`);
-    // Remove the temp file after the script has processed it
-    // fs.unlinkSync(tempFilePath);
-
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send(`Error saving configuration for ${serviceName}`);
-    console.error(`Error saving configuration for ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: POST :: ENABLE
-app.post('/api/service/enable', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/enable POST for ${serviceName}`);
-  try {
-    await execScript('service_enable.sh', [serviceName]);
-    res.send(`Service ${serviceName} enabled successfully.`);
-  } catch (error) {
-    res.status(500).send(`Error enabling service ${serviceName}`);
-    console.error(`Error enabling service ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: POST :: DISABLE
-app.post('/api/service/disable', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/disable POST for ${serviceName}`);
-  try {
-    await execScript('service_disable.sh', [serviceName]);
-    res.send(`Service ${serviceName} disabled successfully.`);
-  } catch (error) {
-    res.status(500).send(`Error disabling service ${serviceName}`);
-    console.error(`Error disabling service ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: POST :: START
-app.post('/api/service/start', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/start POST for ${serviceName}`);
-  try {
-    await execScript('service_start.sh', [serviceName]);
-    res.send(`Service ${serviceName} started successfully.`);
-  } catch (error) {
-    res.status(500).send(`Error starting service ${serviceName}`);
-    console.error(`Error starting service ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: POST :: STOP
-app.post('/api/service/stop', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/stop POST for ${serviceName}`);
-  try {
-    await execScript('service_stop.sh', [serviceName]);
-    res.send(`Service ${serviceName} stopped successfully.`);
-  } catch (error) {
-    res.status(500).send(`Error stopping service ${serviceName}`);
-    console.error(`Error stopping service ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: POST :: RESTART
-app.post('/api/service/restart', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/restart POST for ${serviceName}`);
-  try {
-    await execScript('service_restart.sh', [serviceName]);
-    res.send(`Service ${serviceName} restarted successfully.`);
-  } catch (error) {
-    res.status(500).send(`Error restarting service ${serviceName}`);
-    console.error(`Error restarting service ${serviceName}:`, error.message);
-  }
-});
-//// SERVICE :: GET :: LOGS
-app.get('/api/service/logs', async (req, res) => {
-  const { serviceName } = req.query;
-  console.log(`/api/service/logs GET for ${serviceName}`);
-  try {
-    const result = await execScript('service_get_logs.sh', [serviceName]);
-  res.send(result);
-  } catch (error) {
-    res.status(500).send(`Error retrieving logs for ${serviceName}`);
-    console.error(`Error retrieving logs for ${serviceName}:`, error.message);
-  }
-});
 //// VEHICLE :: GET :: STATUSES
 app.get('/api/vehicle/autopilot-details', async (req, res) => {
   console.log('/api/vehicle/autopilot-details');
@@ -213,6 +94,7 @@ app.get('/api/vehicle/autopilot-details', async (req, res) => {
 
   }
 });
+
 //// VEHICLE :: POST :: FW_UPLOAD
 app.post('/api/vehicle/firmware-upload', (req, res) => {
   console.log('/api/vehicle/firmware-upload');
@@ -237,6 +119,52 @@ app.post('/api/vehicle/firmware-upload', (req, res) => {
     }
     executeScriptWithProgress('px4_flash.sh', [uploadPath], socket);
     res.send({ message: 'Starting...' });
+  });
+});
+
+// Network connection proxy
+// Proxy API calls for the network service
+app.use('/api/network', (req, res) => {
+  const connectionManagerPort = 3001;
+  const targetUrl = `http://localhost:${connectionManagerPort}${req.url}`;
+
+  // Forward the request to the connection manager service
+  fetch(targetUrl, {
+    method: req.method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...req.headers
+    },
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined
+  })
+  .then(response => response.json())
+  .then(data => res.json(data))
+  .catch(error => {
+    console.error(`Error proxying to connection manager: ${error}`);
+    res.status(500).json({ error: "Failed to communicate with connection manager service" });
+  });
+});
+
+// Service management proxy
+// Proxy API calls for the service manager
+app.use('/api/service', (req, res) => {
+  const serviceManagerPort = 3002;
+  const targetUrl = `http://localhost:${serviceManagerPort}${req.url}`;
+
+  // Forward the request to the service manager service
+  fetch(targetUrl, {
+    method: req.method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...req.headers
+    },
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined
+  })
+  .then(response => response.json())
+  .then(data => res.json(data))
+  .catch(error => {
+    console.error(`Error proxying to service manager: ${error}`);
+    res.status(500).json({ error: "Failed to communicate with service manager service" });
   });
 });
 
