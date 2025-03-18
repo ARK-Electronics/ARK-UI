@@ -125,7 +125,13 @@
           <p>{{ socketError }}</p>
         </div>
 
-        <div class="usage-container">
+        <!-- Loading spinner -->
+        <div v-if="isLoadingUsageData" class="loading-container">
+          <div class="spinner"></div>
+          <p>Loading network data...</p>
+        </div>
+        <!-- Data -->
+        <div v-else class="usage-container">
           <div v-if="usageData.length === 0" class="empty-state">
             <div class="empty-message">
               <i class="fas fa-chart-bar"></i>
@@ -698,6 +704,7 @@ export default {
       expandedInterfaces: [],  // Track expanded/collapsed state of each interface
       socketError: null,
       socket: null,
+      isLoadingUsageData: true,
       
       // Connection form
       showConnectionForm: false,
@@ -795,6 +802,7 @@ export default {
     // Watch section changes for socket connections
     activeSection(newSection, oldSection) {
       if (newSection === 'usage') {
+        this.isLoadingUsageData = true;
         // Connect socket when viewing usage tab
         this.socketError = null;  // Clear any previous errors
         this.connectUsageSocket();
@@ -976,6 +984,8 @@ export default {
       }
 
       console.log(`Processing: ${data.length} interfaces`);
+
+      this.isLoadingUsageData = false;
 
       try {
         // Create arrays to hold the processed data
@@ -2732,6 +2742,21 @@ input:checked + .toggle-slider:before {
   font-size: 0.7rem;
   color: #d32f2f;
   margin-top: 5px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: var(--ark-color-black);
+  font-size: 1rem;
 }
 
 </style>
