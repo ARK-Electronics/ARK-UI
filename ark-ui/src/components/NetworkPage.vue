@@ -390,7 +390,7 @@
                 </div>
               </div>
 
-              <div v-if="newConnection.mode === 'infrastructure'" class="form-group">
+              <div v-if="newConnection.type === 'wifi'" class="form-group">
                 <span class="label-text">Auto-Connect:</span>
                 <div class="toggle-switch">
                   <input type="checkbox" id="wifi-autoconnect"
