@@ -1,22 +1,18 @@
-const { defineConfig } = require('@vue/cli-service')
-module.exports = defineConfig({
-  transpileDependencies: true,
+// vue.config.js
+module.exports = {
   devServer: {
     proxy: {
+      // All API requests go through the Express server
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true
       },
-      '/network': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        ws: true // Enable WebSocket proxying
-      },
+      // Unified Socket.IO connections for all services
       '/socket.io': {
-        target: 'http://localhost:3000', // Route all Socket.IO traffic to the 3000 server for now
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        ws: true // Enable WebSocket proxying for Socket.IO
+        ws: true
       }
     }
   }
-});
+}

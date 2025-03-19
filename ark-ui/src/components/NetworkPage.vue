@@ -703,7 +703,7 @@ export default {
       usageData: [],
       expandedInterfaces: [],  // Track expanded/collapsed state of each interface
       socketError: null,
-      socket: null,
+      statsSocket: null,
       isLoadingUsageData: true,
       
       // Connection form
@@ -912,23 +912,23 @@ export default {
         // Close existing connection if any
         this.disconnectUsageSocket();
 
-        this.socket = io(process.env.VUE_APP_NETWORK_SOCKET_URL, {
-          path: process.env.VUE_APP_NETWORK_SOCKET_PATH,
-          transports: ['websocket', 'polling'],
+        this.statsSocket = io(process.env.VUE_APP_SOCKET_URL, {
+          path: '/socket.io/network-stats',
+          transports: ['websocket'],
           reconnectionAttempts: 5,
           reconnectionDelay: 1000
         });
 
         // Handle connection events
-        this.socket.on('connect', () => {
-          console.log('Network stats Socket.IO connection established!', this.socket.id);
+        this.statsSocket.on('connect', () => {
+          console.log('Network stats Socket.IO connection established!', this.statsSocket.id);
 
           // Clear any previous error
           this.socketError = null;
         });
 
         // Handle real-time data updates
-        this.socket.on('network_stats_update', (data) => {
+        this.statsSocket.on('network_stats_update', (data) => {
           console.log(`Received network stats update with ${data ? data.length : 0} interfaces`);
 
           if (!data || !Array.isArray(data)) {
@@ -941,12 +941,12 @@ export default {
         });
 
         // Handle connection errors
-        this.socket.on('connect_error', (error) => {
+        this.statsSocket.on('connect_error', (error) => {
           console.error('Socket connection error:', error);
           this.socketError = `Connection error: ${error.message}`;
         });
 
-        this.socket.on('disconnect', (reason) => {
+        this.statsSocket.on('disconnect', (reason) => {
           console.log('Socket disconnected:', reason);
           if (this.activeSection === 'usage') {
             this.socketError = `WebSocket disconnected. Reconnecting...`;
@@ -959,20 +959,20 @@ export default {
     },
 
     disconnectUsageSocket() {
-      if (this.socket) {
-        console.log('Disconnecting from network stats socket:', this.socket.id);
+      if (this.statsSocket) {
+        console.log('Disconnecting from network stats socket:', this.statsSocket.id);
 
         // Remove all event listeners to prevent memory leaks
-        this.socket.off('connect');
-        this.socket.off('disconnect');
-        this.socket.off('connect_error');
-        this.socket.off('network_stats_update');
+        this.statsSocket.off('connect');
+        this.statsSocket.off('disconnect');
+        this.statsSocket.off('connect_error');
+        this.statsSocket.off('network_stats_update');
 
         // Disconnect the socket
-        this.socket.disconnect();
+        this.statsSocket.disconnect();
 
         // Clear the reference
-        this.socket = null;
+        this.statsSocket = null;
         console.log('Socket disconnected and reference cleared');
       }
     },

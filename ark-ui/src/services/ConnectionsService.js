@@ -1,14 +1,14 @@
 import axios from 'axios';
 
 const ENDPOINTS = {
-  connections: `/network/connections`,
-  connectionUpdate: (name) => `/network/connections/${name}`,
-  connectConnection: (name) => `/network/connections/${name}/connect`,
-  disconnectConnection: (name) => `/network/connections/${name}/disconnect`,
-  wifiScan: `/network/wifi/scan`,
-  usage: `/network/usage`,
-  hostname: `/network/hostname`,
-  lteStatus: `/network/lte/status`,
+  connections: `/api/network/connections`,
+  connectionUpdate: (name) => `/api/network/connections/${name}`,
+  connectConnection: (name) => `/api/network/connections/${name}/connect`,
+  disconnectConnection: (name) => `/api/network/connections/${name}/disconnect`,
+  wifiScan: `/api/network/wifi/scan`,
+  usage: `/api/network/usage`,
+  hostname: `/api/network/hostname`,
+  lteStatus: `/api/network/lte/status`,
 };
 
 export default {

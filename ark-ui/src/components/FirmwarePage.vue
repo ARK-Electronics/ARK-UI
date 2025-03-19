@@ -31,8 +31,8 @@ export default {
   mounted() {
     // Connect to the firmware update socket
     this.socket = io(process.env.VUE_APP_SOCKET_URL, {
-      path: process.env.VUE_APP_SOCKET_PATH,
-      transports: ['websocket', 'polling'],
+      path: '/socket.io/vehicle-firmware-upload',
+      transports: ['websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
     });

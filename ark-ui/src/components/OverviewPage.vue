@@ -138,7 +138,7 @@ export default {
   },
   mounted() {
     this.fetchConnectionDetails();
-    this.fetchAutopilotData();
+    // this.fetchAutopilotData();
     this.fetchServiceStatuses();
     this.startPolling();
   },
@@ -149,7 +149,7 @@ export default {
     startPolling() {
       this.pollingInterval = setInterval(() => {
         this.fetchServiceStatuses();
-        this.fetchAutopilotData()
+        // this.fetchAutopilotData()
       }, 1000); // Poll every second
     },
     stopPolling() {

@@ -1,173 +1,147 @@
+// app.js
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const { exec, spawn } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
-const fileUpload = require('express-fileupload');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const morgan = require('morgan');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const http = require('http');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:8080", // Allow your client URL
-    methods: ["GET", "POST"],
-  }
-});
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(fileUpload({ limits: { fileSize: 3 * 1024 * 1024 } })); // 3MB max, MCU flash is 2MB
+// Apply middleware that doesn't interfere with request body
+app.use(morgan('dev')); // Logging for HTTP requests
 app.use(cors());
 
-io.on('connection', (socket) => {
-  console.log('New socket connection established:', socket.id);
+// Configuration for our microservices (with default values)
+const NETWORK_SERVICE_URL = process.env.NETWORK_SERVICE_URL || 'http://localhost:3001';
+const SERVICE_MANAGER_URL = process.env.SERVICE_MANAGER_URL || 'http://localhost:3002';
+const VEHICLE_SERVICE_URL = process.env.VEHICLE_SERVICE_URL || 'http://localhost:3003';
 
-  socket.on('disconnect', () => {
-    console.log('Socket disconnected:', socket.id);
-  });
+console.log('Service URLs:');
+console.log(`- NETWORK_SERVICE_URL: ${NETWORK_SERVICE_URL}`);
+console.log(`- SERVICE_MANAGER_URL: ${SERVICE_MANAGER_URL}`);
+console.log(`- VEHICLE_SERVICE_URL: ${VEHICLE_SERVICE_URL}`);
+
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.originalUrl}`);
+  next();
 });
 
-// Helper function to execute a script with arguments, using shell and PATH
-async function execScript(scriptName, args = []) {
-  try {
-    // Construct the command by combining the script and arguments
-    const command = `${scriptName} ${args.join(' ')}`;
-    const { stdout, stderr } = await execPromise(command, { shell: '/bin/bash' });
+// Create an array to keep track of all websocket proxies
+const wsProxies = [];
 
-    if (stderr) {
-      console.error(`Error output: ${stderr}`);
-    }
-
-    return stdout; // Return stdout, the actual script output
-  } catch (error) {
-    throw new Error(`Error executing script: ${error.message}`);
-  }
-}
-
-// Helper function to handle the execution of shell scripts with progress
-function executeScriptWithProgress(scriptPath, args, socket) {
-  console.log(`Executing script: ${scriptPath} with args: ${args}`);  // Log execution command
-  const script = spawn(scriptPath, args);
-
-  script.stdout.on('data', (data) => {
-    try {
-      const progressData = JSON.parse(data.toString());
-      console.log('Progress Data:', progressData);
-      socket.emit('progress', progressData);
-    } catch (err) {
-      console.error('Error parsing progress data:', err.message);
+const createWsProxy = (path, target) => {
+  const proxy = createProxyMiddleware({
+    target: target,
+    changeOrigin: true,
+    ws: true,
+    logLevel: 'debug',
+    onError: (err, req, res) => {
+      console.error(`WebSocket proxy error on ${path}: ${err.message}`);
+      if (res.writeHead) {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'WebSocket service unavailable' }));
+      }
     }
   });
 
-  script.stderr.on('data', (data) => {
-    console.error(`STDERR: ${data}`);  // Log raw stderr data
-    socket.emit('error', data.toString());
-  });
+  app.use(path, proxy);
+  wsProxies.push({ path, proxy });
+};
 
-  script.on('close', (code) => {
-    console.log(`Script closed with code: ${code}`);  // Log the exit code
-    if (code === 0) {
-      socket.emit('completed', { message: 'Firmware update completed successfully.' });
-    } else {
-      socket.emit('error', { message: `Script exited with code ${code}` });
+// Create websocket proxies
+createWsProxy('/socket.io/network-stats', NETWORK_SERVICE_URL);
+createWsProxy('/socket.io/vehicle-firmware-upload', VEHICLE_SERVICE_URL);
+
+server.on('upgrade', (req, socket, head) => {
+  const matchingProxy = wsProxies.find(({ path }) => req.url.startsWith(path));
+  if (matchingProxy) {
+    matchingProxy.proxy.upgrade(req, socket, head);
+  } else {
+    socket.destroy();
+  }
+});
+
+// Service proxy
+app.use('/api/service', createProxyMiddleware({
+  target: SERVICE_MANAGER_URL,
+  changeOrigin: true,
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error(`Service proxy error: ${err.message}`);
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Service service unavailable' }));
+  }
+}));
+
+// Network proxy
+app.use('/api/network', createProxyMiddleware({
+  target: NETWORK_SERVICE_URL,
+  changeOrigin: true,
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error(`Network proxy error: ${err.message}`);
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Network service unavailable' }));
+  }
+}));
+
+// Vehicle proxy
+app.use('/api/vehicle', createProxyMiddleware({
+  target: VEHICLE_SERVICE_URL,
+  changeOrigin: true,
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error(`Vehicle service proxy error: ${err.message}`);
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Vehicle service unavailable' }));
+  }
+}));
+
+// NOW add body parsing middleware AFTER all proxies
+app.use(express.json());
+
+// Add body logging middleware after body parser
+app.use((req, res, next) => {
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`Request body:`, req.body);
+  }
+  next();
+});
+
+// Health check endpoint and other non-proxy endpoints
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    services: {
+      network: { url: NETWORK_SERVICE_URL },
+      service: { url: SERVICE_MANAGER_URL },
+      vehicle: { url: VEHICLE_SERVICE_URL }
     }
   });
-
-  script.on('error', (err) => {
-    console.error(`Failed to start subprocess: ${err}`);  // Log startup errors
-    socket.emit('error', { message: `Failed to start subprocess: ${err.message}` });
-  });
-}
-
-//// VEHICLE :: GET :: STATUSES
-app.get('/api/vehicle/autopilot-details', async (req, res) => {
-  console.log('/api/vehicle/autopilot-details');
-  try {
-    const result = await execScript('mavlink_autopilot_details.sh');
-    res.json(JSON.parse(result));
-  } catch (error) {
-    res.status(500).send('Error retrieving autopilot details');
-    console.error(`Error retrieving autopilot details`);
-
-  }
 });
 
-//// VEHICLE :: POST :: FW_UPLOAD
-app.post('/api/vehicle/firmware-upload', (req, res) => {
-  console.log('/api/vehicle/firmware-upload');
-  if (!req.files || !req.files.firmware) {
-    return res.status(400).send('No files were uploaded.');
-  }
-
-  const firmwareFile = req.files.firmware;
-  const uploadPath = `/tmp/${firmwareFile.name}`;
-  const socketId = req.body.socketId;  // The client needs to send this
-  const socket = io.sockets.sockets.get(socketId);
-
-  if (!socket) {
-    return res.status(404).send('Socket connection not found. Firmware upload failed.');
-    console.error(`Error firmware upload failed`);
-  }
-
-  firmwareFile.mv(uploadPath, (err) => {
-    if (err) {
-      console.error('File move error:', err);
-      return res.status(500).send('Failed to save the file');
-    }
-    executeScriptWithProgress('px4_flash.sh', [uploadPath], socket);
-    res.send({ message: 'Starting...' });
+// Fallback route for API requests when services are down
+app.use('/api/*', (req, res) => {
+  res.status(503).json({
+    error: 'Service Unavailable',
+    message: 'The requested microservice is currently unavailable'
   });
 });
 
-// Network connection proxy
-// Proxy API calls for the network service
-app.use('/api/network', (req, res) => {
-  const connectionManagerPort = 3001;
-  const targetUrl = `http://localhost:${connectionManagerPort}${req.url}`;
-
-  // Forward the request to the connection manager service
-  fetch(targetUrl, {
-    method: req.method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...req.headers
-    },
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined
-  })
-  .then(response => response.json())
-  .then(data => res.json(data))
-  .catch(error => {
-    console.error(`Error proxying to connection manager: ${error}`);
-    res.status(500).json({ error: "Failed to communicate with connection manager service" });
+// Error handling
+app.use((err, req, res, next) => {
+  console.error('Express error:', err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
   });
 });
 
-// Service management proxy
-// Proxy API calls for the service manager
-app.use('/api/service', (req, res) => {
-  const serviceManagerPort = 3002;
-  const targetUrl = `http://localhost:${serviceManagerPort}${req.url}`;
-
-  // Forward the request to the service manager service
-  fetch(targetUrl, {
-    method: req.method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...req.headers
-    },
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined
-  })
-  .then(response => response.json())
-  .then(data => res.json(data))
-  .catch(error => {
-    console.error(`Error proxying to service manager: ${error}`);
-    res.status(500).json({ error: "Failed to communicate with service manager service" });
-  });
+// Start the server
+server.listen(PORT, () => {
+  console.log(`API Gateway running on port ${PORT}`);
 });
 
-server.listen(3000, () => {
-  console.log('Server running on port 3000');
-});
+module.exports = { app, server };

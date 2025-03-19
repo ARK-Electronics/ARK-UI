@@ -320,23 +320,23 @@ export default {
 
         const tomlString = toml.dump(configToSave);
 
-        axios
-          .post(`/api/service/config?serviceName=${this.serviceName}`, {
-            config: tomlString
-          })
-          .then((response) => {
-            if (response.data.status === 'success') {
-              this.$emit('close-editor');
-              this.$emit('config-saved');
-            } else {
-              console.error('Error saving config:', response.data.data);
-              alert('Error saving configuration');
-            }
-          })
-          .catch((error) => {
-            console.error('Error saving config:', error);
+        axios.post(`/api/service/config?serviceName=${this.serviceName}`,
+          JSON.stringify({ config: tomlString }),
+          { headers: { 'Content-Type': 'application/json' } }
+        )
+        .then((response) => {
+          if (response.data.status === 'success') {
+            this.$emit('close-editor');
+            this.$emit('config-saved');
+          } else {
+            console.error('Error saving config:', response.data.data);
             alert('Error saving configuration');
-          });
+          }
+        })
+        .catch((error) => {
+          console.error('Error saving config:', error);
+          alert('Error saving configuration');
+        });
       } catch (error) {
         console.error('Error converting to TOML:', error);
         alert('Error preparing configuration for saving');
