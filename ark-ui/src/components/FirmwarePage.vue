@@ -9,7 +9,7 @@
     </div>
     <progress v-if="isUploading" :value="progress" max="100"></progress>
     <p v-if="file">{{ statusMessage }}</p>
-    <button v-if="file" @click="uploadFirmware" class="upload-btn">Upload Firmware</button>
+    <button v-if="file && !isUploading" @click="uploadFirmware" class="upload-btn">Upload Firmware</button>
   </div>
 </template>
 
@@ -29,36 +29,57 @@ export default {
     };
   },
   mounted() {
-    // Connect to the firmware update socket
-    this.socket = io(process.env.VUE_APP_SOCKET_URL, {
-      path: '/socket.io/vehicle-firmware-upload',
-      transports: ['websocket'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
-    });
-
-    this.socket.on('connect', () => {
-      console.log(`Connected to firmware update socket with ID: ${this.socket.id}`);
-    });
-
-    this.socket.on('progress', data => {
-      this.progress = data.percent;
-      this.statusMessage = `${data.status} ${data.percent.toFixed(2)}%`;
-      this.isUploading = true;
-    });
-
-    this.socket.on('completed', message => {
-      this.statusMessage = message.message;
-      this.isUploading = false;
-    });
-
-    this.socket.on('error', error => {
-      this.statusMessage = `Error: ${error.message}`;
-      console.error('Error:', error);
-      this.isUploading = false;
-    });
+    this.connectSocket();
+  },
+  beforeUnmount() {
+    this.disconnectSocket();
   },
   methods: {
+    connectSocket() {
+      // Connect to the firmware update socket
+      this.socket = io(process.env.VUE_APP_SOCKET_URL, {
+        path: '/socket.io/vehicle-firmware-upload',
+        transports: ['websocket'],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+
+      this.socket.on('connect', () => {
+        console.log(`Connected to firmware update socket with ID: ${this.socket.id}`);
+      });
+
+      this.socket.on('progress', data => {
+        this.progress = data.percent;
+        this.statusMessage = `${data.status} ${data.percent.toFixed(2)}%`;
+        this.isUploading = true;
+      });
+
+      this.socket.on('completed', message => {
+        this.statusMessage = message.message;
+        this.isUploading = false;
+        // Wait a bit and then disconnect the socket once update is complete
+        setTimeout(() => {
+          this.disconnectSocket();
+        }, 2000);
+      });
+
+      this.socket.on('error', error => {
+        this.statusMessage = `Error: ${error.message || error}`;
+        console.error('Error:', error);
+        this.isUploading = false;
+        // Disconnect the socket on error after a short delay
+        setTimeout(() => {
+          this.disconnectSocket();
+        }, 2000);
+      });
+    },
+    disconnectSocket() {
+      if (this.socket) {
+        console.log('Disconnecting socket');
+        this.socket.disconnect();
+        this.socket = null;
+      }
+    },
     handleFileUpload(event) {
       this.file = event.target.files[0];
     },
@@ -69,23 +90,31 @@ export default {
       event.currentTarget.style.background = 'none';
     },
     dropHandler(event) {
+      event.currentTarget.style.background = 'none';
       this.file = event.dataTransfer.files[0];
       this.handleFileUpload({ target: { files: event.dataTransfer.files } });
     },
     async uploadFirmware() {
       if (!this.file) return;
+
+      // Reconnect socket if it was disconnected
+      if (!this.socket) {
+        this.connectSocket();
+      }
+
       this.isUploading = true;
       const formData = new FormData();
       formData.append('firmware', this.file);
       formData.append('socketId', this.socket.id);
+
       try {
         const response = await axios.post('/api/vehicle/firmware-upload', formData, {
           headers: {'Content-Type': 'multipart/form-data'}
         });
         this.statusMessage = response.data.message;
       } catch (error) {
-        console.error('Upload failed', error.response.data);
-        this.statusMessage = `Upload failed: ${error.response.data}`;
+        console.error('Upload failed', error.response ? error.response.data : error);
+        this.statusMessage = `Upload failed: ${error.response ? error.response.data : error.message}`;
         this.isUploading = false;
       }
     },
@@ -172,5 +201,4 @@ progress::-moz-progress-bar {
   background-color: var(--ark-color-green); /* Main progress color */
   border-radius: 10px;
 }
-
 </style>
