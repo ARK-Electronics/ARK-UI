@@ -858,7 +858,15 @@ export default {
         this.refreshingConnections = false
       }
     },
-    
+
+    refreshConnectionsWithDelay(delayMs = 1000) {
+      this.refreshingConnections = true;
+      setTimeout(async () => {
+        // Refresh connections
+        await this.fetchConnections();
+      }, delayMs);
+    },
+
     async scanWifi() {
       this.scanning = true;
       try {
@@ -890,13 +898,13 @@ export default {
     
     // Select a WiFi network from the scan list
     selectWifiNetwork(network) {
-      // this.newConnection = {
-      //   ...this.newConnection,
-      //   name: network.ssid,
-      //   ssid: network.ssid,
-      //   type: 'wifi',
-      //   mode: 'infrastructure'
-      // };
+      this.newConnection = {
+        ...this.newConnection,
+        name: network.ssid,
+        ssid: network.ssid,
+        type: 'wifi',
+        mode: 'infrastructure'
+      };
       this.selectedNetworkSecured = network.secured;
 
       // If the network is secured, focus the password field
@@ -1144,8 +1152,7 @@ export default {
           await ConnectionsService.connectConnection(connection.name);
         }
         
-        // Refresh connections
-        await this.fetchConnections();
+        this.refreshConnectionsWithDelay();
       } catch (error) {
         console.error('Failed to toggle connection:', error);
       }
@@ -1189,8 +1196,7 @@ export default {
       
       try {
         await ConnectionsService.deleteConnection(connection.name);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay
-        await this.fetchConnections();
+        this.refreshConnectionsWithDelay();
       } catch (error) {
         console.error('Failed to delete connection:', error);
       }
@@ -1256,7 +1262,8 @@ export default {
         
         // Close form and refresh data
         this.closeConnectionForm();
-        await this.fetchConnections();
+        this.refreshConnectionsWithDelay();
+
       } catch (error) {
         console.error('Failed to save connection:', error);
         alert('Failed to save connection. Please check your settings and try again.');

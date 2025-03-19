@@ -2,9 +2,9 @@
   <div id="app">
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
-      <router-link class="link" to="/">Overview</router-link>
-      <router-link class="link" to="/connections-config">Network</router-link>
-      <router-link class="link" to="/firmware-upload">Firmware</router-link>
+      <router-link class="link" to="/">Autopilot</router-link>
+      <router-link class="link" to="/connections-page">Connections</router-link>
+      <router-link class="link" to="/services-page">Services</router-link>
       <a
         class="link external-link"
         :href="`http://${hostname}.local/flight-review`"
