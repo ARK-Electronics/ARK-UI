@@ -77,11 +77,6 @@ export default {
   data() {
     return {
       services: [],
-      connectionDetails: {
-        ssid: '',
-        ipAddress: '',
-        hostname: ''
-      },
       selectedService: null,
       showTomlEditor: false,
       showMavlinkRouterEditor: false,
@@ -90,7 +85,6 @@ export default {
     };
   },
   mounted() {
-    this.fetchConnectionDetails();
     this.fetchServiceStatuses();
     this.startPolling();
   },
@@ -107,17 +101,6 @@ export default {
       if (this.pollingInterval) {
         clearInterval(this.pollingInterval);
       }
-    },
-    fetchConnectionDetails() {
-      axios.get('/api/network/active-connection')
-        .then(response => {
-          this.connectionDetails.ssid = response.data.ssid;
-          this.connectionDetails.ipAddress = response.data.ip_address;
-          this.connectionDetails.hostname = response.data.hostname;
-        })
-        .catch(error => {
-          console.error('Error fetching connection details:', error);
-        });
     },
     fetchServiceStatuses() {
       axios.get('/api/service/statuses')

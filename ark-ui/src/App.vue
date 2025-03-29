@@ -33,7 +33,7 @@ export default {
   },
   mounted() {
     this.adjustSidebarWidth();
-    this.fetchConnectionDetails();
+    this.fetchHostname();
   },
   methods: {
     adjustSidebarWidth() {
@@ -45,13 +45,13 @@ export default {
       // Adjust for padding and any extra space you might want
       this.sidebarWidth = maxWidth + 40; // Extra 40px for padding
     },
-    fetchConnectionDetails() {
-      axios.get('/api/network/active-connection')
+    fetchHostname() {
+      axios.get('/api/network/hostname')
         .then(response => {
           this.hostname = response.data.hostname;
         })
         .catch(error => {
-          console.error('Error fetching connection details:', error);
+          console.error('Error fetching hostname:', error);
         });
     },
   }
