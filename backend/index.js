@@ -16,12 +16,12 @@ app.use(cors());
 // Configuration for our microservices (with default values)
 const NETWORK_SERVICE_URL = process.env.NETWORK_SERVICE_URL || 'http://localhost:3001';
 const SERVICE_MANAGER_URL = process.env.SERVICE_MANAGER_URL || 'http://localhost:3002';
-const VEHICLE_SERVICE_URL = process.env.VEHICLE_SERVICE_URL || 'http://localhost:3003';
+const AUTOPILOT_SERVICE_URL = process.env.AUTOPILOT_SERVICE_URL || 'http://localhost:3003';
 
 console.log('Service URLs:');
 console.log(`- NETWORK_SERVICE_URL: ${NETWORK_SERVICE_URL}`);
 console.log(`- SERVICE_MANAGER_URL: ${SERVICE_MANAGER_URL}`);
-console.log(`- VEHICLE_SERVICE_URL: ${VEHICLE_SERVICE_URL}`);
+console.log(`- AUTOPILOT_SERVICE_URL: ${AUTOPILOT_SERVICE_URL}`);
 
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.originalUrl}`);
@@ -52,7 +52,7 @@ const createWsProxy = (path, target) => {
 
 // Create websocket proxies
 createWsProxy('/socket.io/network-stats', NETWORK_SERVICE_URL);
-createWsProxy('/socket.io/vehicle-firmware-upload', VEHICLE_SERVICE_URL);
+createWsProxy('/socket.io/autopilot-firmware-upload', AUTOPILOT_SERVICE_URL);
 
 server.on('upgrade', (req, socket, head) => {
   const matchingProxy = wsProxies.find(({ path }) => req.url.startsWith(path));
@@ -87,15 +87,15 @@ app.use('/api/network', createProxyMiddleware({
   }
 }));
 
-// Vehicle proxy
-app.use('/api/vehicle', createProxyMiddleware({
-  target: VEHICLE_SERVICE_URL,
+// Autopilot proxy
+app.use('/api/autopilot', createProxyMiddleware({
+  target: AUTOPILOT_SERVICE_URL,
   changeOrigin: true,
   logLevel: 'debug',
   onError: (err, req, res) => {
-    console.error(`Vehicle service proxy error: ${err.message}`);
+    console.error(`Autopilot service proxy error: ${err.message}`);
     res.writeHead(502, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Vehicle service unavailable' }));
+    res.end(JSON.stringify({ error: 'Autopilot service unavailable' }));
   }
 }));
 
@@ -117,7 +117,7 @@ app.get('/health', (req, res) => {
     services: {
       network: { url: NETWORK_SERVICE_URL },
       service: { url: SERVICE_MANAGER_URL },
-      vehicle: { url: VEHICLE_SERVICE_URL }
+      autopilot: { url: AUTOPILOT_SERVICE_URL }
     }
   });
 });
