@@ -24,7 +24,7 @@
         :class="{ 'active': activeSection === 'maintenance' }"
         @click="activeSection = 'maintenance'"
       >
-        Maintenance
+        Tools
       </button>
       <!-- Placeholder for future extensions -->
       <button
@@ -50,9 +50,9 @@
         </div>
 
         <!-- Connection Status Banner -->
-        <div class="connection-banner" :class="{ 'connected': isConnected, 'disconnected': !isConnected }">
+        <div class="connection-banner" :class="connectionBannerClass">
           <div class="banner-content">
-            <i :class="isConnected ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'"></i>
+            <i :class="connectionStatusIcon"></i>
             <span>{{ statusText }}</span>
           </div>
         </div>
@@ -133,31 +133,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Telemetry Stats Card -->
-        <div class="status-card telemetry-card">
-          <h3 class="card-title telemetry-title">
-            <i class="fas fa-chart-line"></i> Telemetry Statistics
-          </h3>
-          <div class="telemetry-grid">
-            <div class="telemetry-item">
-              <div class="telemetry-value">{{ telemetryStats.messageRate || 0 }}</div>
-              <div class="telemetry-label">Messages/sec</div>
-            </div>
-            <div class="telemetry-item">
-              <div class="telemetry-value">{{ telemetryStats.packetLoss || 0 }}%</div>
-              <div class="telemetry-label">Packet Loss</div>
-            </div>
-            <div class="telemetry-item">
-              <div class="telemetry-value">{{ telemetryStats.latency || 0 }} ms</div>
-              <div class="telemetry-label">Latency</div>
-            </div>
-            <div class="telemetry-item">
-              <div class="telemetry-value">{{ formatNumber(telemetryStats.byteRate / 1024, 1) }} KB/s</div>
-              <div class="telemetry-label">Data Rate</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Firmware Section -->
@@ -186,8 +161,8 @@
             </div>
           </div>
           <div class="connection-status">
-            <div class="status-indicator" :class="{ 'connected': isConnected, 'disconnected': !isConnected }">
-              <i :class="isConnected ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'"></i>
+            <div class="status-indicator" :class="connectionStatusClass">
+              <i :class="connectionStatusIcon"></i>
               <span>{{ statusText }}</span>
             </div>
           </div>
@@ -237,8 +212,8 @@
           <div class="upload-actions">
             <button @click="uploadFirmware"
                     class="upload-btn"
-                    :disabled="!file || !isConnected || isUploading"
-                    :class="{'disabled': !file || !isConnected || isUploading}">
+                    :disabled="!file || (!isConnected && !isInBootloader) || isUploading"
+                    :class="{'disabled': !file || (!isConnected && !isInBootloader) || isUploading}">
               <i class="fas fa-upload"></i> Upload Firmware
             </button>
           </div>
@@ -252,6 +227,7 @@
         </div>
 
         <div class="maintenance-grid">
+
           <!-- Reset Flight Controller Card -->
           <div class="maintenance-card">
             <div class="maintenance-icon">
@@ -265,8 +241,8 @@
               <div class="maintenance-actions">
                 <button @click="showResetConfirmation = true"
                         class="maintenance-button"
-                        :disabled="!isConnected"
-                        :class="{'disabled': !isConnected}">
+                        :disabled="!isConnected && !isInBootloader"
+                        :class="{'disabled': !isConnected && !isInBootloader}">
                   Reset Controller
                 </button>
               </div>
@@ -326,6 +302,7 @@
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -344,7 +321,7 @@
             <i class="fas fa-exclamation-triangle"></i>
           </div>
           <p class="dialog-text">
-            Are you sure you want to reset the flight controller? This will temporarily disconnect telemetry and may disrupt active operations.
+            Are you sure you want to reset the flight controller?
           </p>
           <div class="reset-options">
             <div class="reset-option">
@@ -354,7 +331,7 @@
             </div>
             <div class="reset-option">
               <input type="radio" id="reset-bootloader" v-model="resetMode" value="bootloader">
-              <label for="reset-bootloader">Bootloader Mode</label>
+              <label for="reset-bootloader">Bootloader</label>
               <p class="reset-description">Reset to bootloader (use only for firmware updates).</p>
             </div>
           </div>
@@ -389,13 +366,8 @@ export default {
         remaining: 0,
         current: 0,
         connected: false,
+        in_bootloader: false,
         last_heartbeat: null
-      },
-      telemetryStats: {
-        messageRate: 0,
-        packetLoss: 0,
-        latency: 0,
-        byteRate: 0
       },
       file: null,
       progress: 0,
@@ -413,8 +385,28 @@ export default {
     isConnected() {
       return this.autopilot.connected;
     },
+    isInBootloader() {
+      return this.autopilot.in_bootloader;
+    },
     statusText() {
-      return this.isConnected ? 'Connected' : 'Disconnected';
+      if (this.isConnected) return 'Connected';
+      if (this.isInBootloader) return 'Bootloader';
+      return 'Disconnected';
+    },
+    connectionStatusIcon() {
+      if (this.isConnected) return 'fas fa-check-circle';
+      if (this.isInBootloader) return 'fas fa-microchip';
+      return 'fas fa-exclamation-triangle';
+    },
+    connectionStatusClass() {
+      if (this.isConnected) return 'connected';
+      if (this.isInBootloader) return 'bootloader';
+      return 'disconnected';
+    },
+    connectionBannerClass() {
+      if (this.isConnected) return 'connected';
+      if (this.isInBootloader) return 'bootloader';
+      return 'disconnected';
     }
   },
   mounted() {
@@ -480,33 +472,10 @@ export default {
       try {
         const response = await AutopilotService.getAutopilotDetails();
         this.autopilot = response.data;
-
-        // If connected, try to fetch real telemetry stats
-        if (this.autopilot.connected) {
-          try {
-            const telemetryResponse = await AutopilotService.getTelemetryStats();
-            this.telemetryStats = telemetryResponse.data;
-          } catch (telemetryError) {
-            console.warn('Could not fetch telemetry stats, using defaults:', telemetryError);
-            // Fallback to simulation if endpoint is not implemented yet
-            this.telemetryStats = {
-              messageRate: Math.floor(Math.random() * 20) + 30, // 30-50 messages/sec
-              packetLoss: (Math.random() * 2).toFixed(1), // 0-2% packet loss
-              latency: Math.floor(Math.random() * 20) + 10, // 10-30ms latency
-              byteRate: Math.floor(Math.random() * 2000) + 4000 // 4-6 KB/s data rate
-            };
-          }
-        } else {
-          this.telemetryStats = {
-            messageRate: 0,
-            packetLoss: 0,
-            latency: 0,
-            byteRate: 0
-          };
-        }
       } catch (error) {
         console.error('Error fetching autopilot data:', error);
         this.autopilot.connected = false;
+        this.autopilot.in_bootloader = false;
       } finally {
         this.isRefreshing = false;
       }
@@ -527,7 +496,7 @@ export default {
       this.handleFileUpload({ target: { files: event.dataTransfer.files } });
     },
     async uploadFirmware() {
-      if (!this.file || !this.isConnected) return;
+      if (!this.file || (!this.isConnected && !this.isInBootloader)) return;
 
       this.isUploading = true;
       this.progress = 0;
@@ -688,7 +657,7 @@ export default {
   text-align: center;
 }
 
-/* Tabs */
+/* Navigation Tabs */
 .tabs-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -701,7 +670,7 @@ export default {
   background-color: var(--ark-color-white);
   padding: 8px 0;
   box-sizing: border-box;
-  min-width: 100%;
+  min-width: 100%; /* Critical: prevents width changes */
 }
 
 .tab-button {
@@ -743,28 +712,29 @@ export default {
 /* Tab Content Container */
 .tab-content-wrapper {
   width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: auto;
+  overflow: hidden; /* Prevents expansion */
 }
 
 .section-container {
   width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   transition: opacity 0.2s ease;
   box-shadow: 0 2px 8px var(--ark-color-black-shadow);
   background-color: var(--ark-color-white);
   border-radius: 8px;
   padding: 20px;
   box-sizing: border-box;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden; /* Critical: prevents horizontal scrolling */
   display: flex;
   flex-direction: column;
   position: relative;
-  min-width: 100%;
-  max-width: 100%;
 }
 
 .section-header {
@@ -838,6 +808,11 @@ export default {
   border: 1px solid var(--ark-color-red);
 }
 
+.connection-banner.bootloader {
+  background-color: rgba(52, 152, 219, 0.1);
+  border: 1px solid var(--ark-color-blue);
+}
+
 .banner-content {
   display: flex;
   align-items: center;
@@ -854,16 +829,20 @@ export default {
   color: var(--ark-color-red);
 }
 
+.bootloader .banner-content {
+  color: var(--ark-color-blue);
+}
+
 /* Status Cards Layout */
 .status-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .status-card,
-.telemetry-card,
 .firmware-current-card,
 .firmware-upload-card {
   background-color: var(--ark-color-white);
@@ -871,10 +850,8 @@ export default {
   box-shadow: 0 2px 8px var(--ark-color-black-shadow);
   padding: 16px;
   transition: all 0.2s ease;
-}
-
-.telemetry-card {
-  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card-title {
@@ -883,9 +860,6 @@ export default {
   margin: 0 0 16px 0;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--ark-color-black-shadow);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .system-title {
@@ -894,10 +868,6 @@ export default {
 
 .power-title {
   color: var(--ark-color-orange);
-}
-
-.telemetry-title {
-  color: var(--ark-color-green);
 }
 
 .upload-title {
@@ -1007,32 +977,6 @@ export default {
   align-items: center;
 }
 
-/* Telemetry Card */
-.telemetry-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.telemetry-item {
-  text-align: center;
-  padding: 10px;
-  background-color: var(--ark-color-light-grey);
-  border-radius: 8px;
-}
-
-.telemetry-value {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.telemetry-label {
-  font-size: 0.8rem;
-  color: var(--ark-color-black);
-  opacity: 0.7;
-}
-
 /* Firmware Section */
 .firmware-current-card {
   display: flex;
@@ -1096,6 +1040,11 @@ export default {
 .status-indicator.disconnected {
   background-color: rgba(244, 67, 54, 0.1);
   color: var(--ark-color-red);
+}
+
+.status-indicator.bootloader {
+  background-color: rgba(52, 152, 219, 0.1);
+  color: var(--ark-color-blue);
 }
 
 /* Firmware Upload */
@@ -1259,25 +1208,33 @@ export default {
   font-family: monospace;
 }
 
-/* Maintenance Section */
+/* Maintenance Section - Fixed to prevent layout expansion */
 .maintenance-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Critical for preventing expansion */
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .maintenance-card {
   display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   padding: 20px;
   background-color: var(--ark-color-white);
   border-radius: 8px;
   box-shadow: 0 2px 8px var(--ark-color-black-shadow);
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .maintenance-card:hover {
   box-shadow: 0 4px 12px var(--ark-color-black-shadow);
-  transform: translateY(-2px);
 }
 
 .maintenance-icon {
@@ -1286,16 +1243,21 @@ export default {
   justify-content: center;
   font-size: 2rem;
   width: 60px;
-  height: 60px;
+  min-width: 60px;
   margin-right: 16px;
   color: var(--ark-color-blue);
+  flex-shrink: 0;
 }
 
 .maintenance-content {
   flex: 1;
+  min-width: 0; /* Critical to allow content to shrink */
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .maintenance-title {
@@ -1303,6 +1265,8 @@ export default {
   font-weight: 600;
   margin: 0;
   color: var(--ark-color-black);
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .maintenance-description {
@@ -1311,6 +1275,9 @@ export default {
   color: var(--ark-color-black);
   opacity: 0.8;
   line-height: 1.4;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .maintenance-actions {
@@ -1480,7 +1447,6 @@ export default {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .status-cards,
-  .telemetry-grid,
   .maintenance-grid {
     grid-template-columns: 1fr;
   }
@@ -1504,4 +1470,5 @@ export default {
     align-self: center;
   }
 }
+
 </style>
