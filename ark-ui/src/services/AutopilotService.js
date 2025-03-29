@@ -5,7 +5,6 @@ const ENDPOINTS = {
   firmwareUpload: `/api/autopilot/firmware-upload`,
   resetFmu: `/api/autopilot/reset-fmu`,
   resetFmuBootloader: `/api/autopilot/reset-fmu-bootloader`,
-  telemetryStats: `/api/autopilot/telemetry-stats`,
 };
 
 export default {
@@ -22,8 +21,5 @@ export default {
   },
   async resetFmuBootloader() {
     return axios.post(ENDPOINTS.resetFmuBootloader);
-  },
-  async getTelemetryStats() {
-    return axios.get(ENDPOINTS.telemetryStats);
   }
 };
