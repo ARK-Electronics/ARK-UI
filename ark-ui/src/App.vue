@@ -2,9 +2,9 @@
   <div id="app">
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
-      <router-link class="link" to="/">Overview</router-link>
-      <router-link class="link" to="/wifi-config">Wifi</router-link>
-      <router-link class="link" to="/firmware-upload">Firmware</router-link>
+      <router-link class="link" to="/">Autopilot</router-link>
+      <router-link class="link" to="/connections-page">Connections</router-link>
+      <router-link class="link" to="/services-page">Services</router-link>
       <a
         class="link external-link"
         :href="`http://${hostname}.local/flight-review`"
@@ -33,7 +33,7 @@ export default {
   },
   mounted() {
     this.adjustSidebarWidth();
-    this.fetchConnectionDetails();
+    this.fetchHostname();
   },
   methods: {
     adjustSidebarWidth() {
@@ -45,13 +45,13 @@ export default {
       // Adjust for padding and any extra space you might want
       this.sidebarWidth = maxWidth + 40; // Extra 40px for padding
     },
-    fetchConnectionDetails() {
-      axios.get('/api/network/active-connection')
+    fetchHostname() {
+      axios.get('/api/network/hostname')
         .then(response => {
           this.hostname = response.data.hostname;
         })
         .catch(error => {
-          console.error('Error fetching connection details:', error);
+          console.error('Error fetching hostname:', error);
         });
     },
   }
@@ -71,6 +71,7 @@ export default {
   --ark-color-red: rgba(244, 67, 54, 1);
   --ark-color-red-hover: rgba(244, 67, 54, 0.65);
   --ark-color-orange: rgba(255, 140, 0, 1);
+  --ark-color-light-grey: rgba(248, 249, 250, 1)
 }
 
 #app {
@@ -78,8 +79,6 @@ export default {
   font-family: 'Roboto', sans-serif;
   color: var(--ark-color-black); /* Should be your black color */
   background-color: var(--ark-color-white); /* Your specified white color */
-  height: 90vh;
-  overflow: hidden; /* Prevent vertical scrolling */
 }
 
 .sidebar {
@@ -133,8 +132,7 @@ export default {
 .content {
   flex-grow: 1;
   padding-left: 4vh;
-  height: 100vh; /* Full height */
-  overflow-y: hidden; /* Enable scrolling */
+  overflow-y: auto; /* Enable scrolling */
   color: var(--ark-color-black-bold); /* Text color black */
   background-color: var(--ark-color-white); /* Light gray background for the content area, change to white if necessary */
 }

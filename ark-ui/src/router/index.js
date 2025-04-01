@@ -1,23 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import OverviewPage from '../components/OverviewPage.vue';
-import WifiPage from '../components/WifiPage.vue';
-import FirmwarePage from '../components/FirmwarePage.vue';
+import ServicesPage from '../components/ServicesPage.vue';
+import ConnectionsPage from '../components/ConnectionsPage.vue';
+import AutopilotPage from '../components/AutopilotPage.vue';
 
 const routes = [
   {
     path: '/',
-    name: 'OverviewPage',
-    component: OverviewPage
+    name: 'AutopilotPage',
+    component: AutopilotPage
   },
   {
-    path: '/wifi-config',
-    name: 'WifiPage',
-    component: WifiPage
+    path: '/connections-page',
+    name: 'ConnectionsPage',
+    component: ConnectionsPage
   },
   {
-    path: '/firmware-upload',
-    name: 'FirmwarePage',
-    component: FirmwarePage
+    path: '/services-page',
+    name: 'ServicesPage',
+    component: ServicesPage
   }
 ];
 

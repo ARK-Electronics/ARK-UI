@@ -9,6 +9,7 @@ cleanup() {
     if ps -p $FRONTEND_PID > /dev/null; then
         kill $FRONTEND_PID
     fi
+
     exit 0
 }
 
@@ -34,6 +35,6 @@ sleep 5
 echo "Opening web browser to http://localhost:8080"
 xdg-open http://localhost:8080
 
-# Wait for both the backend and frontend processes to end
+# Wait for all processes to end
 wait $BACKEND_PID
 wait $FRONTEND_PID

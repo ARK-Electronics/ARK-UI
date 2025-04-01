@@ -1,44 +1,5 @@
 <template>
-  <div class="autopilot-container">
-    <h1>Overview</h1>
-    <div class="details-grid">
-      <div class="detail">
-        <p><strong>Autopilot</strong></p>
-        <p>{{ autopilot.type }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Version</strong></p>
-        <p>{{ autopilot.version }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Git Hash</strong></p>
-        <p>{{ autopilot.gitHash }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Network</strong></p>
-        <p>{{ connectionDetails.ssid }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>IP Address</strong></p>
-        <p>{{ connectionDetails.ipAddress }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Hostname</strong></p>
-        <p>{{ connectionDetails.hostname }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Voltage (V)</strong></p>
-        <p>{{ autopilot.voltage }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Remaining (%)</strong></p>
-        <p>{{ autopilot.remaining }}</p>
-      </div>
-      <div class="detail">
-        <p><strong>Current (A)</strong></p>
-        <p>{{ autopilot.current }}</p>
-      </div>
-    </div>
+  <div class="services-container">
     <h2>Services</h2>
     <div class="services-grid">
       <div v-for="service in services.filter(service => service.visible === 'true')"
@@ -115,20 +76,7 @@ export default {
   },
   data() {
     return {
-      autopilot: {
-        type: '--',
-        version: '--',
-        gitHash: '--',
-        voltage: '--',
-        remaining: '--',
-        current: '--'
-      },
       services: [],
-      connectionDetails: {
-        ssid: '',
-        ipAddress: '',
-        hostname: ''
-      },
       selectedService: null,
       showTomlEditor: false,
       showMavlinkRouterEditor: false,
@@ -137,8 +85,6 @@ export default {
     };
   },
   mounted() {
-    this.fetchConnectionDetails();
-    this.fetchAutopilotData();
     this.fetchServiceStatuses();
     this.startPolling();
   },
@@ -149,38 +95,12 @@ export default {
     startPolling() {
       this.pollingInterval = setInterval(() => {
         this.fetchServiceStatuses();
-        this.fetchAutopilotData()
       }, 1000); // Poll every second
     },
     stopPolling() {
       if (this.pollingInterval) {
         clearInterval(this.pollingInterval);
       }
-    },
-    fetchConnectionDetails() {
-      axios.get('/api/network/active-connection')
-        .then(response => {
-          this.connectionDetails.ssid = response.data.ssid;
-          this.connectionDetails.ipAddress = response.data.ip_address;
-          this.connectionDetails.hostname = response.data.hostname;
-        })
-        .catch(error => {
-          console.error('Error fetching connection details:', error);
-        });
-    },
-    fetchAutopilotData() {
-      axios.get('/api/vehicle/autopilot-details')
-        .then(response => {
-          this.autopilot.gitHash = response.data.git_hash;
-          this.autopilot.version = response.data.version;
-          this.autopilot.type = response.data.autopilot_type;
-          this.autopilot.voltage = parseFloat(response.data.voltage).toFixed(2);
-          this.autopilot.remaining = parseFloat(response.data.remaining).toFixed(0);
-          this.autopilot.current = parseFloat(response.data.current).toFixed(2);
-        })
-        .catch(error => {
-          console.error('Error fetching PX4 data:', error);
-        });
     },
     fetchServiceStatuses() {
       axios.get('/api/service/statuses')
@@ -272,31 +192,11 @@ h1, h2 {
   color: var(--ark-color-black);
 }
 
-.autopilot-container {
+.services-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-.detail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.detail p {
-  margin-top: 0;
-  margin-bottom: 1px;
 }
 
 .label, p {
