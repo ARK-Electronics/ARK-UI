@@ -1308,7 +1308,7 @@ export default {
   align-items: center;
   width: 100%;
   max-width: 1200px;
-  min-width: 800px; /* Prevent getting too narrow */
+  min-width: 800px;
   margin: 0 auto;
   padding: 20px;
   gap: 20px;
@@ -1414,7 +1414,6 @@ export default {
   background-color: var(--ark-color-white);
   padding: 8px 0;
   box-sizing: border-box;
-  /* Fixed min-width to prevent resizing */
   min-width: 100%;
 }
 
