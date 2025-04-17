@@ -3,6 +3,7 @@
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
       <router-link class="link" to="/">Autopilot</router-link>
+      <router-link class="link" to="/system-page">System</router-link>
       <router-link class="link" to="/connections-page">Connections</router-link>
       <router-link class="link" to="/services-page">Services</router-link>
       <a
