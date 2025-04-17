@@ -375,7 +375,7 @@ export default {
         const response = await SystemService.changeHostname(this.newHostname);
 
         if (response.data && response.data.success) {
-          this.hostnameMessage = `Hostname changed to ${this.newHostname}. Please reboot the system for changes to take effect.`;
+          this.hostnameMessage = response.data.message;
           this.hostnameError = false;
           this.newHostname = '';
         } else {
