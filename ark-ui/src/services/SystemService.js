@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const ENDPOINTS = {
-  jetson: `/api/system/stats`,
+  info: `/api/system/info`,
   hostname: `/api/system/hostname`,
 };
 
 export default {
-  async getJetsonInfo() {
-    return axios.get(ENDPOINTS.jetson);
+  async getSystemInfo() {
+    return axios.get(ENDPOINTS.info);
   },
 
   async changeHostname(hostname) {

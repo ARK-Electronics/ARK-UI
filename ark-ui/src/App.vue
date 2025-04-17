@@ -47,17 +47,17 @@ export default {
       this.sidebarWidth = maxWidth + 40; // Extra 40px for padding
     },
     fetchHostname() {
-      axios.get('/api/system/stats')
+      axios.get('/api/system/info')
         .then(response => {
-          // Extract hostname from the stats object
+          // Extract hostname from the info object
           if (response.data && response.data.interfaces && response.data.interfaces.hostname) {
             this.hostname = response.data.interfaces.hostname;
           } else {
-            console.error('Hostname not found in system stats response');
+            console.error('Hostname not found in system info response');
           }
         })
         .catch(error => {
-          console.error('Error fetching system stats:', error);
+          console.error('Error fetching system info:', error);
         });
     },
     isActive(routePath) {
