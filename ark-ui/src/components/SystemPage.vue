@@ -9,141 +9,178 @@
     <div v-else class="system-grid">
       <!-- Hardware Section -->
       <div class="system-box">
-        <p class="section-title"><strong>Hardware</strong></p>
-        <div class="info-row">
-          <p class="info-label">Model:</p>
-          <p class="info-value">{{ systemInfo.hardware.model }}</p>
+        <div class="section-header">
+          <i class="fas fa-microchip"></i>
+          <span class="section-title">Hardware</span>
         </div>
-        <div class="info-row">
-          <p class="info-label">Module:</p>
-          <p class="info-value">{{ systemInfo.hardware.module }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Serial:</p>
-          <p class="info-value">{{ systemInfo.hardware.serial_number }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">L4T:</p>
-          <p class="info-value">{{ systemInfo.hardware.l4t }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">JetPack:</p>
-          <p class="info-value">{{ systemInfo.hardware.jetpack }}</p>
+        <div class="info-content">
+          <div class="info-row">
+            <p class="info-label">Model:</p>
+            <p class="info-value">{{ systemInfo.hardware.model }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Module:</p>
+            <p class="info-value">{{ systemInfo.hardware.module }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Serial:</p>
+            <p class="info-value">{{ systemInfo.hardware.serial_number }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">L4T:</p>
+            <p class="info-value">{{ systemInfo.hardware.l4t }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">JetPack:</p>
+            <p class="info-value">{{ systemInfo.hardware.jetpack }}</p>
+          </div>
         </div>
       </div>
 
       <!-- Platform Section -->
       <div class="system-box">
-        <p class="section-title"><strong>Platform</strong></p>
-        <div class="info-row">
-          <p class="info-label">Distribution:</p>
-          <p class="info-value">{{ systemInfo.platform.distribution }}</p>
+        <div class="section-header">
+          <i class="fas fa-server"></i>
+          <span class="section-title">Platform</span>
         </div>
-        <div class="info-row">
-          <p class="info-label">Release:</p>
-          <p class="info-value">{{ systemInfo.platform.release }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Python:</p>
-          <p class="info-value">{{ systemInfo.platform.python }}</p>
+        <div class="info-content">
+          <div class="info-row">
+            <p class="info-label">Distribution:</p>
+            <p class="info-value">{{ systemInfo.platform.distribution }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Release:</p>
+            <p class="info-value">{{ systemInfo.platform.release }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Python:</p>
+            <p class="info-value">{{ systemInfo.platform.python }}</p>
+          </div>
         </div>
       </div>
 
       <!-- Libraries Section -->
       <div class="system-box">
-        <p class="section-title"><strong>Libraries</strong></p>
-        <div class="info-row">
-          <p class="info-label">CUDA:</p>
-          <p class="info-value">{{ systemInfo.libraries.cuda }}</p>
+        <div class="section-header">
+          <i class="fas fa-book"></i>
+          <span class="section-title">Libraries</span>
         </div>
-        <div class="info-row">
-          <p class="info-label">OpenCV:</p>
-          <p class="info-value">{{ systemInfo.libraries.opencv }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">OpenCV-CUDA:</p>
-          <p class="info-value">{{ systemInfo.libraries.opencv_cuda ? 'Yes' : 'No' }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">cuDNN:</p>
-          <p class="info-value">{{ systemInfo.libraries.cudnn }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">TensorRT:</p>
-          <p class="info-value">{{ systemInfo.libraries.tensorrt }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">VPI:</p>
-          <p class="info-value">{{ systemInfo.libraries.vpi }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Vulkan:</p>
-          <p class="info-value">{{ systemInfo.libraries.vulkan }}</p>
+        <div class="info-content">
+          <div class="info-row">
+            <p class="info-label">CUDA:</p>
+            <p class="info-value">{{ systemInfo.libraries.cuda }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">OpenCV:</p>
+            <p class="info-value">{{ systemInfo.libraries.opencv }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">OpenCV-CUDA:</p>
+            <p class="info-value">{{ systemInfo.libraries.opencv_cuda ? 'Yes' : 'No' }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">cuDNN:</p>
+            <p class="info-value">{{ systemInfo.libraries.cudnn }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">TensorRT:</p>
+            <p class="info-value">{{ systemInfo.libraries.tensorrt }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">VPI:</p>
+            <p class="info-value">{{ systemInfo.libraries.vpi }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Vulkan:</p>
+            <p class="info-value">{{ systemInfo.libraries.vulkan }}</p>
+          </div>
         </div>
       </div>
 
       <!-- Power & Temperature Section -->
       <div class="system-box">
-        <p class="section-title"><strong>Power & Temperature</strong></p>
-        <div class="info-row">
-          <p class="info-label">Power Mode:</p>
-          <p class="info-value">{{ systemInfo.power.nvpmodel }}</p>
+        <div class="section-header">
+          <i class="fas fa-bolt"></i>
+          <span class="section-title">Power & Temperature</span>
         </div>
-        <div class="info-row">
-          <p class="info-label">Jetson Clocks:</p>
-          <p class="info-value">{{ systemInfo.power.jetson_clocks ? 'Enabled' : 'Disabled' }}</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Power Draw:</p>
-          <p class="info-value">{{ systemInfo.power.total }} mW</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">CPU Temp:</p>
-          <p class="info-value">{{ systemInfo.power.temperature.cpu.toFixed(1) }}°C</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">GPU Temp:</p>
-          <p class="info-value">{{ systemInfo.power.temperature.gpu.toFixed(1) }}°C</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Junction Temp:</p>
-          <p class="info-value">{{ systemInfo.power.temperature.tj.toFixed(1) }}°C</p>
+        <div class="info-content">
+          <div class="info-row">
+            <p class="info-label">Power Mode:</p>
+            <p class="info-value">{{ systemInfo.power.nvpmodel }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Jetson Clocks:</p>
+            <p class="info-value">{{ systemInfo.power.jetson_clocks ? 'Enabled' : 'Disabled' }}</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Power Draw:</p>
+            <p class="info-value">{{ systemInfo.power.total }} mW</p>
+          </div>
+          <div class="temperature-gauges">
+            <div class="temp-gauge">
+              <div class="temp-gauge-inner" :style="getTempStyle(systemInfo.power.temperature.cpu)">
+                <span>CPU</span>
+                <span>{{ systemInfo.power.temperature.cpu.toFixed(1) }}°C</span>
+              </div>
+            </div>
+            <div class="temp-gauge">
+              <div class="temp-gauge-inner" :style="getTempStyle(systemInfo.power.temperature.gpu)">
+                <span>GPU</span>
+                <span>{{ systemInfo.power.temperature.gpu.toFixed(1) }}°C</span>
+              </div>
+            </div>
+            <div class="temp-gauge">
+              <div class="temp-gauge-inner" :style="getTempStyle(systemInfo.power.temperature.tj)">
+                <span>TJ</span>
+                <span>{{ systemInfo.power.temperature.tj.toFixed(1) }}°C</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Network Section -->
       <div class="system-box">
-        <p class="section-title"><strong>Network</strong></p>
-        <div class="info-row">
-          <p class="info-label">Hostname:</p>
-          <p class="info-value">{{ systemInfo.interfaces.hostname }}</p>
+        <div class="section-header">
+          <i class="fas fa-network-wired"></i>
+          <span class="section-title">Network</span>
         </div>
-        <div v-for="(ip, iface) in systemInfo.interfaces.interfaces" :key="iface" class="info-row">
-          <p class="info-label">{{ iface }}:</p>
-          <p class="info-value">{{ ip }}</p>
+        <div class="info-content">
+          <div class="info-row">
+            <p class="info-label">Hostname:</p>
+            <p class="info-value">{{ systemInfo.interfaces.hostname }}</p>
+          </div>
+          <div v-for="(ip, iface) in systemInfo.interfaces.interfaces" :key="iface" class="info-row">
+            <p class="info-label">{{ iface }}:</p>
+            <p class="info-value">{{ ip }}</p>
+          </div>
         </div>
       </div>
 
       <!-- Storage Section -->
       <div class="system-box">
-        <p class="section-title"><strong>Storage</strong></p>
-        <div class="info-row">
-          <p class="info-label">Total:</p>
-          <p class="info-value">{{ systemInfo.disk.total.toFixed(1) }} GB</p>
+        <div class="section-header">
+          <i class="fas fa-hdd"></i>
+          <span class="section-title">Storage</span>
         </div>
-        <div class="info-row">
-          <p class="info-label">Used:</p>
-          <p class="info-value">{{ systemInfo.disk.used.toFixed(1) }} GB</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Available:</p>
-          <p class="info-value">{{ systemInfo.disk.available.toFixed(1) }} GB</p>
-        </div>
-        <div class="info-row">
-          <p class="info-label">Usage:</p>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: diskUsagePercentage + '%' }"></div>
-            <p class="progress-text">{{ diskUsagePercentage }}%</p>
+        <div class="info-content">
+          <div class="info-row">
+            <p class="info-label">Total:</p>
+            <p class="info-value">{{ systemInfo.disk.total.toFixed(1) }} GB</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Used:</p>
+            <p class="info-value">{{ systemInfo.disk.used.toFixed(1) }} GB</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Available:</p>
+            <p class="info-value">{{ systemInfo.disk.available.toFixed(1) }} GB</p>
+          </div>
+          <div class="disk-usage-container">
+            <div class="progress-bar">
+              <div class="progress-fill" :class="{ 'high': diskUsagePercentage > 80 }" :style="{ width: diskUsagePercentage + '%' }"></div>
+              <p class="progress-text">{{ diskUsagePercentage }}% Used</p>
+            </div>
           </div>
         </div>
       </div>
@@ -237,6 +274,15 @@ export default {
         console.error('Error fetching system information:', error);
         this.loading = false;
       }
+    },
+    getTempStyle(temp) {
+      // Determine color based on temperature
+      // Normal range: 30-60°C, Warning: 60-75°C, Critical: >75°C
+      const hue = Math.max(0, Math.min(120, 120 - ((temp - 30) * 2)));
+      return {
+        backgroundColor: `hsl(${hue}, 70%, 50%)`,
+        height: `${Math.min(100, Math.max(10, ((temp - 20) / 80) * 100))}%`
+      };
     }
   }
 }
@@ -246,13 +292,16 @@ export default {
 h2 {
   text-align: center;
   color: var(--ark-color-black);
+  margin-bottom: 25px;
+  font-size: 24px;
 }
 
 .system-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 10px 20px;
+  height: 100%;
 }
 
 .loading-spinner {
@@ -279,46 +328,78 @@ h2 {
 .system-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
+  grid-auto-rows: minmax(min-content, auto);
+  gap: 12px;
   width: 100%;
+  max-width: 1400px;
 }
 
 .system-box {
-  border: 2px solid var(--ark-color-black-shadow);
-  padding: 15px;
+  border: 1px solid var(--ark-color-black-shadow);
   background-color: var(--ark-color-white);
-  border-radius: 8px;
-  box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+  border-radius: 6px;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.system-box:hover {
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
+}
+
+.section-header {
+  background-color: rgba(0,0,0,0.03);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--ark-color-black-shadow);
+}
+
+.section-header i {
+  margin-right: 8px;
+  color: var(--ark-color-black);
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: bold;
   color: var(--ark-color-black);
-  text-align: center;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--ark-color-black-shadow);
-  padding-bottom: 5px;
+}
+
+.info-content {
+  padding: 10px 12px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 5px 0;
+  margin: 4px 0;
+  font-size: 13px;
 }
 
 .info-label {
-  font-size: 14px;
+  font-weight: 500;
   color: var(--ark-color-black);
-  font-weight: bold;
+  margin: 0;
 }
 
 .info-value {
-  font-size: 14px;
   color: var(--ark-color-black);
   text-align: right;
+  margin: 0;
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.disk-usage-container {
+  margin-top: 10px;
 }
 
 .progress-bar {
@@ -326,15 +407,19 @@ h2 {
   width: 100%;
   height: 20px;
   background-color: #e0e0e0;
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background-color: var(--ark-color-green);
-  border-radius: 10px;
+  border-radius: 4px;
   transition: width 0.3s ease;
+}
+
+.progress-fill.high {
+  background-color: var(--ark-color-red);
 }
 
 .progress-text {
@@ -344,13 +429,44 @@ h2 {
   right: 0;
   text-align: center;
   line-height: 20px;
-  color: black;
+  color: rgba(0, 0, 0, 0.7);
   font-size: 12px;
+  font-weight: 500;
+  margin: 0;
 }
 
-/* Make progress bar red when usage is high */
-.progress-fill.high {
-  background-color: var(--ark-color-red);
+.temperature-gauges {
+  display: flex;
+  justify-content: space-between;
+  height: 80px;
+  margin-top: 10px;
+}
+
+.temp-gauge {
+  width: 30%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.temp-gauge-inner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--ark-color-green);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0px 1px 2px rgba(0,0,0,0.3);
+  min-height: 20px;
+  transition: height 0.3s ease, background-color 0.3s ease;
 }
 
 @media (max-width: 1200px) {
