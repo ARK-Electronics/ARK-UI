@@ -2,8 +2,8 @@
   <div id="app">
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
-      <router-link class="link" to="/">Autopilot</router-link>
-      <router-link class="link" to="/system-page">System</router-link>
+      <router-link class="link" to="/">System</router-link>
+      <router-link class="link" to="/autopilot-page">Autopilot</router-link>
       <router-link class="link" to="/connections-page">Connections</router-link>
       <router-link class="link" to="/services-page">Services</router-link>
       <a
@@ -47,14 +47,19 @@ export default {
       this.sidebarWidth = maxWidth + 40; // Extra 40px for padding
     },
     fetchHostname() {
-      axios.get('/api/network/hostname')
+      axios.get('/api/system/stats')
         .then(response => {
-          this.hostname = response.data.hostname;
+          // Extract hostname from the stats object
+          if (response.data && response.data.interfaces && response.data.interfaces.hostname) {
+            this.hostname = response.data.interfaces.hostname;
+          } else {
+            console.error('Hostname not found in system stats response');
+          }
         })
         .catch(error => {
-          console.error('Error fetching hostname:', error);
+          console.error('Error fetching system stats:', error);
         });
-    },
+    }
   }
 };
 </script>

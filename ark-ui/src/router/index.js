@@ -7,13 +7,13 @@ import SystemPage from '../components/SystemPage.vue';
 const routes = [
   {
     path: '/',
-    name: 'AutopilotPage',
-    component: AutopilotPage
-  },
-  {
-    path: '/system-page',
     name: 'SystemPage',
     component: SystemPage
+  },
+  {
+    path: '/autopilot-page',
+    name: 'AutopilotPage',
+    component: AutopilotPage
   },
   {
     path: '/connections-page',
