@@ -2,10 +2,10 @@
   <div id="app">
     <div class="sidebar" ref="sidebar">
       <img src="@/assets/logo.png" alt="Logo" class="logo">
-      <router-link class="link" to="/">System</router-link>
-      <router-link class="link" to="/autopilot-page">Autopilot</router-link>
-      <router-link class="link" to="/connections-page">Connections</router-link>
-      <router-link class="link" to="/services-page">Services</router-link>
+      <router-link class="link" :class="{ active: isActive('/') }" to="/">System</router-link>
+      <router-link class="link" :class="{ active: isActive('/autopilot-page') }" to="/autopilot-page">Autopilot</router-link>
+      <router-link class="link" :class="{ active: isActive('/connections-page') }" to="/connections-page">Connections</router-link>
+      <router-link class="link" :class="{ active: isActive('/services-page') }" to="/services-page">Services</router-link>
       <a
         class="link external-link"
         :href="`http://${hostname}.local/flight-review`"
@@ -59,6 +59,9 @@ export default {
         .catch(error => {
           console.error('Error fetching system stats:', error);
         });
+    },
+    isActive(routePath) {
+      return this.$route.path === routePath;
     }
   }
 };
@@ -115,6 +118,18 @@ export default {
   transform: translateX(5px);
   color: var(--ark-color-white); /* White text on hover */
   background-color: var(--ark-color-green); /* Your green accent color */
+}
+
+.link.active {
+  color: var(--ark-color-white); /* White text for active link */
+  background-color: var(--ark-color-green); /* Green background for active link */
+  transform: translateX(5px); /* Same transform as hover for consistency */
+  font-weight: bold; /* Make the text bold to stand out more */
+}
+
+/* Disable hover effect on active link to avoid visual confusion */
+.link.active:hover {
+  transform: translateX(5px); /* Keep the same transform to avoid jumps */
 }
 
 /* Style for the external link */
