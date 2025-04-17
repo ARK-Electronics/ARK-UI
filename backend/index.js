@@ -17,11 +17,13 @@ app.use(cors());
 const NETWORK_SERVICE_URL = process.env.NETWORK_SERVICE_URL || 'http://localhost:3001';
 const SERVICE_MANAGER_URL = process.env.SERVICE_MANAGER_URL || 'http://localhost:3002';
 const AUTOPILOT_SERVICE_URL = process.env.AUTOPILOT_SERVICE_URL || 'http://localhost:3003';
+const SYSTEM_SERVICE_URL = process.env.SYSTEM_SERVICE_URL || 'http://localhost:3004';
 
 console.log('Service URLs:');
 console.log(`- NETWORK_SERVICE_URL: ${NETWORK_SERVICE_URL}`);
 console.log(`- SERVICE_MANAGER_URL: ${SERVICE_MANAGER_URL}`);
 console.log(`- AUTOPILOT_SERVICE_URL: ${AUTOPILOT_SERVICE_URL}`);
+console.log(`- SYSTEM_SERVICE_URL: ${SYSTEM_SERVICE_URL}`);
 
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.originalUrl}`);
@@ -99,6 +101,18 @@ app.use('/api/autopilot', createProxyMiddleware({
   }
 }));
 
+// System proxy
+app.use('/api/system', createProxyMiddleware({
+  target: SYSTEM_SERVICE_URL,
+  changeOrigin: true,
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error(`System service proxy error: ${err.message}`);
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'System service unavailable' }));
+  }
+}));
+
 // NOW add body parsing middleware AFTER all proxies
 app.use(express.json());
 
@@ -117,7 +131,8 @@ app.get('/health', (req, res) => {
     services: {
       network: { url: NETWORK_SERVICE_URL },
       service: { url: SERVICE_MANAGER_URL },
-      autopilot: { url: AUTOPILOT_SERVICE_URL }
+      autopilot: { url: AUTOPILOT_SERVICE_URL },
+      system: { url: SYSTEM_SERVICE_URL }
     }
   });
 });
