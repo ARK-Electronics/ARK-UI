@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <!-- Header -->
-    <h1 class="page-title">System Information</h1>
+    <h1 class="page-title">Pi System Information</h1>
 
     <div v-if="loading" class="loading-container">
       <i class="fas fa-spinner fa-spin"></i>
@@ -30,14 +30,14 @@
               <span class="info-label">Serial:</span>
               <span class="info-value">{{ systemInfo.hardware.serial_number }}</span>
             </div>
-            <div class="info-row">
+<!--             <div class="info-row">
               <span class="info-label">L4T:</span>
               <span class="info-value">{{ systemInfo.hardware.l4t }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">JetPack:</span>
               <span class="info-value">{{ systemInfo.hardware.jetpack }}</span>
-            </div>
+            </div> -->
           </div>
         </div>
 
@@ -70,22 +70,22 @@
             <span class="header-title">Libraries</span>
           </div>
           <div class="card-content">
-            <div class="info-row">
+<!--             <div class="info-row">
               <span class="info-label">CUDA:</span>
               <span class="info-value">{{ systemInfo.libraries.cuda }}</span>
-            </div>
+            </div> -->
             <div class="info-row">
               <span class="info-label">OpenCV:</span>
               <span class="info-value">{{ systemInfo.libraries.opencv }}</span>
             </div>
-            <div class="info-row">
+<!--             <div class="info-row">
               <span class="info-label">OpenCV-CUDA:</span>
               <span class="info-value">{{ systemInfo.libraries.opencv_cuda ? 'Yes' : 'No' }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">cuDNN:</span>
               <span class="info-value">{{ systemInfo.libraries.cudnn }}</span>
-            </div>
+            </div> -->
             <div class="info-row">
               <span class="info-label">TensorRT:</span>
               <span class="info-value">{{ systemInfo.libraries.tensorrt }}</span>
@@ -112,10 +112,10 @@
               <span class="info-label">Power Mode:</span>
               <span class="info-value">{{ systemInfo.power.nvpmodel }}</span>
             </div>
-            <div class="info-row">
+<!--             <div class="info-row">
               <span class="info-label">Jetson Clocks:</span>
               <span class="info-value">{{ systemInfo.power.jetson_clocks ? 'Enabled' : 'Disabled' }}</span>
-            </div>
+            </div> -->
             <div class="info-row">
               <span class="info-label">Power Draw:</span>
               <span class="info-value">{{ (systemInfo.power.total / 1000).toFixed(2) }} W</span>
@@ -266,50 +266,58 @@
 import SystemService from '../services/SystemService';
 
 export default {
+  props: {
+    initialSystemInfo: {
+      type: Object,
+      default: function() {
+        return {
+          hardware: {
+            model: '',
+            module: '',
+            serial_number: '',
+            l4t: '',
+            jetpack: ''
+          },
+          platform: {
+            distribution: '',
+            release: '',
+            python: ''
+          },
+          libraries: {
+            cuda: '',
+            opencv: '',
+            opencv_cuda: false,
+            cudnn: '',
+            tensorrt: '',
+            vpi: '',
+            vulkan: ''
+          },
+          power: {
+            nvpmodel: '',
+            jetson_clocks: false,
+            total: 0,
+            temperature: {
+              cpu: 0,
+              gpu: 0,
+              tj: 0
+            }
+          },
+          interfaces: {
+            hostname: '',
+            interfaces: {}
+          },
+          disk: {
+            total: 0,
+            used: 0,
+            available: 0
+          }
+        };
+      }
+    }
+  },
   data() {
     return {
-      systemInfo: {
-        hardware: {
-          model: '',
-          module: '',
-          serial_number: '',
-          l4t: '',
-          jetpack: ''
-        },
-        platform: {
-          distribution: '',
-          release: '',
-          python: ''
-        },
-        libraries: {
-          cuda: '',
-          opencv: '',
-          opencv_cuda: false,
-          cudnn: '',
-          tensorrt: '',
-          vpi: '',
-          vulkan: ''
-        },
-        power: {
-          nvpmodel: '',
-          jetson_clocks: false,
-          total: 0,
-          temperature: {
-            cpu: 0,
-            gpu: 0,
-            tj: 0
-          }
-        },
-        interfaces: {
-          hostname: '',
-          interfaces: {}
-        },
-        disk: {
-          total: 0,
-          used: 0,
-          available: 0
-        }
-      },
+      systemInfo: this.initialSystemInfo,
       loading: true,
       pollingInterval: null,
       newHostname: '',
@@ -350,7 +358,7 @@ export default {
     },
     async fetchSystemInfo() {
       try {
-        const response = await SystemService.getJetsonInfo();
+        const response = await SystemService.getSystemInfo();
         if (response.data) {
           this.systemInfo = response.data;
           this.loading = false;
@@ -484,7 +492,7 @@ export default {
 }
 
 .icon-color {
-	color: var(--ark-color-black);
+  color: var(--ark-color-black);
 }
 
 /* Card Content */
