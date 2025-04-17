@@ -114,27 +114,19 @@
           </div>
           <div class="info-row">
             <p class="info-label">Power Draw:</p>
-            <p class="info-value">{{ systemInfo.power.total }} mW</p>
+            <p class="info-value">{{ (systemInfo.power.total / 1000).toFixed(2) }} W</p>
           </div>
-          <div class="temperature-gauges">
-            <div class="temp-gauge">
-              <div class="temp-gauge-inner" :style="getTempStyle(systemInfo.power.temperature.cpu)">
-                <span>CPU</span>
-                <span>{{ systemInfo.power.temperature.cpu.toFixed(1) }}°C</span>
-              </div>
-            </div>
-            <div class="temp-gauge">
-              <div class="temp-gauge-inner" :style="getTempStyle(systemInfo.power.temperature.gpu)">
-                <span>GPU</span>
-                <span>{{ systemInfo.power.temperature.gpu.toFixed(1) }}°C</span>
-              </div>
-            </div>
-            <div class="temp-gauge">
-              <div class="temp-gauge-inner" :style="getTempStyle(systemInfo.power.temperature.tj)">
-                <span>TJ</span>
-                <span>{{ systemInfo.power.temperature.tj.toFixed(1) }}°C</span>
-              </div>
-            </div>
+          <div class="info-row">
+            <p class="info-label">CPU Temp:</p>
+            <p class="info-value">{{ systemInfo.power.temperature.cpu.toFixed(1) }}°C</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">GPU Temp:</p>
+            <p class="info-value">{{ systemInfo.power.temperature.gpu.toFixed(1) }}°C</p>
+          </div>
+          <div class="info-row">
+            <p class="info-label">Junction Temp:</p>
+            <p class="info-value">{{ systemInfo.power.temperature.tj.toFixed(1) }}°C</p>
           </div>
         </div>
       </div>
@@ -274,15 +266,6 @@ export default {
         console.error('Error fetching system information:', error);
         this.loading = false;
       }
-    },
-    getTempStyle(temp) {
-      // Determine color based on temperature
-      // Normal range: 30-60°C, Warning: 60-75°C, Critical: >75°C
-      const hue = Math.max(0, Math.min(120, 120 - ((temp - 30) * 2)));
-      return {
-        backgroundColor: `hsl(${hue}, 70%, 50%)`,
-        height: `${Math.min(100, Math.max(10, ((temp - 20) / 80) * 100))}%`
-      };
     }
   }
 }
@@ -300,8 +283,7 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px 20px;
-  height: 100%;
+  width: 100%;
 }
 
 .loading-spinner {
@@ -331,7 +313,6 @@ h2 {
   grid-auto-rows: minmax(min-content, auto);
   gap: 12px;
   width: 100%;
-  max-width: 1400px;
 }
 
 .system-box {
@@ -433,40 +414,6 @@ h2 {
   font-size: 12px;
   font-weight: 500;
   margin: 0;
-}
-
-.temperature-gauges {
-  display: flex;
-  justify-content: space-between;
-  height: 80px;
-  margin-top: 10px;
-}
-
-.temp-gauge {
-  width: 30%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.05);
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-
-.temp-gauge-inner {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--ark-color-green);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  text-shadow: 0px 1px 2px rgba(0,0,0,0.3);
-  min-height: 20px;
-  transition: height 0.3s ease, background-color 0.3s ease;
 }
 
 @media (max-width: 1200px) {
