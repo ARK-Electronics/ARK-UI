@@ -1,5 +1,2 @@
-## Install
-The install script downloads Node Version Manager to use the latest version.
-```
-./install.sh
-```
+DEPRECATED
+moved to https://github.com/ARK-Electronics/ARK-OS/tree/main/frontend/ark-ui
